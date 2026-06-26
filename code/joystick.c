@@ -104,6 +104,13 @@ void joystick_init(void)
 
 
 /* 读取摇杆瞬时方向：Y 优先(上下), Y 在死区再看 X(左右) */
+/* DEBUG: return raw ADC X/Y values for diagnosis */
+void joystick_debug_adc(u16 *x, u16 *y)
+{
+    if (x) *x = joy_read_adc_avg(JOY_X_CH, 4);
+    if (y) *y = joy_read_adc_avg(JOY_Y_CH, 4);
+}
+
 static u8 joystick_dir(void)
 {
     u16 x = joy_read_adc_avg(JOY_X_CH, 4);

@@ -19,4 +19,7 @@ u8 joystick_event(void);
 /* 摇杆按下(SW)边沿事件：按下时返回 1，否则 0（非阻塞消抖） */
 u8 joystick_pressed(void);
 
+/* DEBUG: return raw ADC values for diagnosis */
+void joystick_debug_adc(u16 *x, u16 *y);
+
 #endif /* __JOYSTICK_H */
