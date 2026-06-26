@@ -38,6 +38,16 @@ static u16 joy_read_adc(u8 ch)
     return ADC_GetConversionValue(ADC1);
 }
 
+/* 多次采样取平均，减少ADC噪声 */
+static u16 joy_read_adc_avg(u8 ch, u8 times)
+{
+    u32 sum = 0;
+    u8 i;
+    for (i = 0; i < times; i++) {
+        sum += joy_read_adc(ch);
+    }
+    return (u16)(sum / times);
+}
 
 /**
  * @brief  初始化摇杆模块（Joystick）
@@ -72,7 +82,7 @@ void joystick_init(void)
     // ADC_ExternalTrigConv_None : 不使用外部触发转换（由软件内部触发）
     // ADC_DataAlign_Right       : 转换结果数据右对齐
     // 1                         : 转换通道数为 1
-    ADC_init(ADC1, ADC_Mode_Independent, DISABLE, ENABLE,
+    ADC_init(ADC1, ADC_Mode_Independent, DISABLE, DISABLE,
              ADC_ExternalTrigConv_None, ADC_DataAlign_Right, 1);
              
     // 使能 ADC1 外设
@@ -96,8 +106,8 @@ void joystick_init(void)
 /* 读取摇杆瞬时方向：Y 优先(上下), Y 在死区再看 X(左右) */
 static u8 joystick_dir(void)
 {
-    u16 x = joy_read_adc(JOY_X_CH);
-    u16 y = joy_read_adc(JOY_Y_CH);
+    u16 x = joy_read_adc_avg(JOY_X_CH, 4);
+    u16 y = joy_read_adc_avg(JOY_Y_CH, 4);
     if (y > JOY_MID_MAX) return JOY_UP;     /* 上 = Y 大 */
     if (y < JOY_MID_MIN) return JOY_DOWN;   /* 下 = Y 小 */
     if (x > JOY_MID_MAX) return JOY_RIGHT;  /* 右 = X 大 */
