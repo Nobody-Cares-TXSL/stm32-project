@@ -5,6 +5,6 @@
 
 void delay_us(u32 nus);
 void delay_ms(u32 ms);
-void delay_init(void);
+void delay_s(u32 sec);
 
 #endif /* __DELAY_H */
