@@ -115,10 +115,10 @@ static u8 joystick_dir(void)
 {
     u16 x = joy_read_adc_avg(JOY_X_CH, 4);
     u16 y = joy_read_adc_avg(JOY_Y_CH, 4);
-    if (y > JOY_MID_MAX) return JOY_UP;     /* 上 = Y 大 */
-    if (y < JOY_MID_MIN) return JOY_DOWN;   /* 下 = Y 小 */
-    if (x > JOY_MID_MAX) return JOY_RIGHT;  /* 右 = X 大 */
-    if (x < JOY_MID_MIN) return JOY_LEFT;   /* 左 = X 小 */
+    if (y > JOY_MID_MAX) return JOY_DOWN;   /* 下 = Y 大 */
+    if (y < JOY_MID_MIN) return JOY_UP;     /* 上 = Y 小 */
+    if (x > JOY_MID_MAX) return JOY_LEFT;   /* 左 = X 大 */
+    if (x < JOY_MID_MIN) return JOY_RIGHT;  /* 右 = X 小 */
     return JOY_MID;
 }
 
