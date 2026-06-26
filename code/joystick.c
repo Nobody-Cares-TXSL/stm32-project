@@ -9,7 +9,7 @@
 #define JOY_X_CH     ADC_Channel_9  /* PB1 = ADC 通道 9  */
 #define JOY_Y_CH     ADC_Channel_14 /* PC4 = ADC 通道 14 */
 #define JOY_MID_MIN  1500           /* 死区下限（现场可调） */
-#define JOY_MID_MAX  2500           /* 死区上限 */
+#define JOY_MID_MAX  3400           /* 死区上限 */
 
 /* SW 消抖：连续多少次一致才确认稳定态 */
 #define SW_DEBOUNCE  5
