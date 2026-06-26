@@ -19,10 +19,17 @@ void delay_ms(u32 ms)
 		delay_us(1000);
 	}
 }
-/* 可被中断打断的毫秒延时：每 1ms 检查 state_dirty */
-void delay_ms_chk(u32 ms)
+
+/**
+ * @brief  秒级延时函数
+ * @param  sec 需要延时的秒数
+ * @retval 无
+ */
+void delay_s(u32 sec)
 {
-	while (ms--) {
-		delay_us(1000);
-	}
+    while (sec--) {
+        delay_ms(1000); // 循环调用1000次1ms延时
+    }
 }
+
+
