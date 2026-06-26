@@ -25,8 +25,8 @@ static u8 joy_last_dir = JOY_MID;   /* 边沿记忆：仅 中点→方向 才触发 */
  */
 static u16 joy_read_adc(u8 ch)
 {
-    /* 配置ADC1的规则组通道，设置转换顺序为1，采样时间为1.5个时钟周期 */
-    ADC_RegularChannelConfig(ADC1, ch, 1, ADC_SampleTime_1Cycles5);
+    /* 配置ADC1的规则组通道，设置转换顺序为1，采样时间为55.5个时钟周期 */
+    ADC_RegularChannelConfig(ADC1, ch, 1, ADC_SampleTime_55Cycles5);
 
     /* 使能ADC1的软件转换启动功能，开始进行ADC转换 */
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
