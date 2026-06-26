@@ -11,18 +11,17 @@ int main(void)
 
     ui_init();          /* LCD init */
     joystick_init();    /* ADC(X=PB1, Y=PC4) + SW(PA2) */
-    menu_init();        /* draw initial menu */
 
     ui_login("欢迎进入");
     delay_s(2);
     LCD_Fill(0, 0, 128, 128, BLACK);
 
+    menu_init();        /* draw initial menu */
+
     while (1) {
         u8 ev = joystick_event();
         u8 sw = joystick_pressed();
-        if (ev != JOY_MID || sw) {
-            menu_handle(ev, sw);
-        }
+        menu_handle(ev, sw);   /* 每轮调用：主菜单按需重绘，视图态周期 tick */
         delay_ms(10);
     }
 }
