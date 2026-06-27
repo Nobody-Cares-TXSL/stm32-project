@@ -30,12 +30,12 @@ static void menu_show_line(u16 x, u16 y, const u8 *s, u16 fc, u16 bc)
 {
     while (*s) {
         if (*s < 0x80) {                        /* ASCII µ¥×Ö½Ú */
-            LCD_ShowChar(x, y, *s, fc, bc, 16, 1);
+            LCD_ShowChar(x, y, *s, fc, bc, 16, 0);
             x += 8;
             s += 1;
         } else {                                /* GB2312 Ë«×Ö½Úºº×Ö */
             u8 ch[3] = { s[0], s[1], 0 };
-            LCD_ShowChinese(x, y, ch, fc, bc, 16, 1);
+            LCD_ShowChinese(x, y, ch, fc, bc, 16, 0);
             x += 16;
             s += 2;
         }
