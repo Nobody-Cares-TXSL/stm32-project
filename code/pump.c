@@ -7,7 +7,7 @@
 #define PUMP_CLK        RCC_APB2Periph_TYPE_A
 
 /* 有效电平：1=高电平继电器吸合(常见)，0=低电平吸合 */
-#define PUMP_ACTIVE_HIGH  1
+#define PUMP_ACTIVE_HIGH  0
 
 static u8 pump_state = 0;     /* 0=关，1=开 */
 
