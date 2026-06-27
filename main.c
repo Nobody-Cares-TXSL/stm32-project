@@ -10,6 +10,7 @@
 #include "ledstrip.h" /* ledstrip_init */
 #include "beep.h"    /* beep_init */
 #include "usart.h"   /* USART1 调试 log */
+#include "wifi.h"    /* ESP-01S WiFi */
 #include "menu.h"
 #include "lcd.h"
 
@@ -29,6 +30,7 @@ int main(void)
     pump_init();   /* pump: PA1 GPIO -> relay IN1 */
     ledstrip_init(); /* ledstrip: PC12(DIN1) + PC11(DIN2) WS2812B */
     beep_init();   /* beep: PA4 GPIO */
+    wifi_init();     /* USART2 + ESP-01S（v1: 发 AT 验证通信） */
     ui_login("欢迎进入");
     delay_s(2);
     LCD_Fill(0, 0, 128, 128, BLACK);
