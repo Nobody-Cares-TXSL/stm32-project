@@ -10,10 +10,10 @@
 #define LS2_CLK     RCC_APB2Periph_TYPE_C
 
 /* ====== WS2812B 时序校准（72MHz，单位：nop 循环次数） ====== */
-#define WS_T0H  8     /* T0H ~0.35us: HIGH 时间 */
-#define WS_T0L  20    /* T0L ~0.80us: LOW 时间 */
-#define WS_T1H  18    /* T1H ~0.70us: HIGH 时间 */
-#define WS_T1L  14    /* T1L ~0.60us: LOW 时间 */
+#define WS_T0H  2     /* T0H ~0.35us: HIGH 时间 */
+#define WS_T0L  6    /* T0L ~0.80us: LOW 时间 */
+#define WS_T1H  5    /* T1H ~0.70us: HIGH 时间 */
+#define WS_T1L  4     /* T1L ~0.60us: LOW 时间 */
 
 static u8 ls_count[2] = {0, 0};   /* 每条灯带当前点亮数 */
 
