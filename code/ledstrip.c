@@ -10,10 +10,10 @@
 #define LS2_CLK     RCC_APB2Periph_TYPE_C
 
 /* ====== WS2812B 时序校准（72MHz，单位：nop 循环次数） ====== */
-#define WS_T0H  2     /* T0H ~0.35us: HIGH 时间 */
-#define WS_T0L  6    /* T0L ~0.80us: LOW 时间 */
-#define WS_T1H  5    /* T1H ~0.70us: HIGH 时间 */
-#define WS_T1L  4     /* T1L ~0.60us: LOW 时间 */
+#define WS_T0H  7     /* T0H ~0.35us: HIGH 时间 */
+#define WS_T0L  22    /* T0L ~0.80us: LOW 时间 */
+#define WS_T1H  16    /* T1H ~0.70us: HIGH 时间 */
+#define WS_T1L  8     /* T1L ~0.60us: LOW 时间 */
 
 static u8 ls_count[2] = {0, 0};   /* 每条灯带当前点亮数 */
 
@@ -27,14 +27,14 @@ static void ws_delay(u32 n)
 static void ws_send_bit(GPIO_TypeDef *port, u16 pin, u8 bit)
 {
     if (bit) {
-        GPIO_SetBits(port, pin);
+        port->BSRR = pin;       /* set HIGH */
         ws_delay(WS_T1H);
-        GPIO_ResetBits(port, pin);
+        port->BSRR = pin << 16; /* set LOW  */
         ws_delay(WS_T1L);
     } else {
-        GPIO_SetBits(port, pin);
+        port->BSRR = pin;       /* set HIGH */
         ws_delay(WS_T0H);
-        GPIO_ResetBits(port, pin);
+        port->BSRR = pin << 16; /* set LOW  */
         ws_delay(WS_T0L);
     }
 }
@@ -60,7 +60,7 @@ static void ws_send_color(GPIO_TypeDef *port, u16 pin, u8 r, u8 g, u8 b)
 /* 复位（>50us LOW） */
 static void ws_reset(GPIO_TypeDef *port, u16 pin)
 {
-    GPIO_ResetBits(port, pin);
+    port->BSRR = pin << 16; /* set LOW  */
     ws_delay(4000);   /* ~60us */
 }
 
