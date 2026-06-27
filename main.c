@@ -5,6 +5,7 @@
 #include "smoke.h"
 #include "fan.h"     /* fan_init */
 #include "light.h"   /* light_init */
+#include "flame.h"   /* flame_init */
 #include "menu.h"
 #include "lcd.h"
 
@@ -18,6 +19,7 @@ int main(void)
     fan_init();    /* fan: PB0(TIM3_CH3 PWM) */
     light_init();  /* light: PC3(AO) + PB13(DO); ADC1 ready */
 
+    flame_init();   /* flame: PC1/PC2(AO) + PB11/PB12(DO); ADC1 ready */
     ui_login("»¶Ó­½øÈë");
     delay_s(2);
     LCD_Fill(0, 0, 128, 128, BLACK);

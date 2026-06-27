@@ -5,6 +5,7 @@
 #include "smoke_view.h"   /* 烟雾模块视图回调 */
 #include "fan_view.h"   /* fan module */
 #include "light_view.h"   /* light module */
+#include "flame_view.h"  /* flame module */
 #include <string.h>     /* memset */
 #include <stdio.h>      /* sprintf */
 
@@ -14,6 +15,7 @@ static const menu_item_t menu_items[] = {
     { "烟雾报警器", smoke_view_enter, smoke_view_tick, smoke_view_on_event },   /* 烟雾模块 */
     { "风扇模块", fan_view_enter, fan_view_tick, fan_view_on_event },   /* fan module */
     { "光敏模块", light_view_enter, light_view_tick, light_view_on_event }, /* light module */
+    { "火焰传感器", flame_view_enter, flame_view_tick, flame_view_on_event }, /* flame module (dual sensor) */
 };
 #define MENU_COUNT (sizeof(menu_items) / sizeof(menu_items[0]))
 
