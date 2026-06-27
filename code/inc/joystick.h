@@ -10,7 +10,7 @@
 #define JOY_LEFT   3
 #define JOY_RIGHT  4
 
-/* 初始化 ADC(X=PB1, Y=PC4) 和 SW 引脚(PA2)，轮询前调用一次 */
+/* 初始化 ADC(X=PB1, Y=PC4) 和 SW 引脚(PC5)，轮询前调用一次 */
 void joystick_init(void);
 
 /* 摇杆方向边沿事件：仅从中点推出时返回方向码，否则返回 JOY_MID */

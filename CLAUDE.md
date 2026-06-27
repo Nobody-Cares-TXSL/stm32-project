@@ -76,7 +76,7 @@ code/
 
 - **串口**：USART1，9600 baud，接收缓冲 `USART1_RX_BUF[100]`
 - **接收处理模式**：效果函数每次处理完**必须** `memset(USART1_RX_BUF, 0, sizeof(...))` + `USART1_RX_STA = 0`，否则主循环重复进入
-- **摇杆 ADC**：PB1(X)/PC4(Y)，SW(PA2，板子设计为 USART2_TX，当前暂借给摇杆)，死区 1500-2500，边沿触发
+- **摇杆 ADC**：PB1(X)/PC4(Y)，SW(PC5，上拉输入，按下为低)，死区 1500-2500，边沿触发
 - **DHT11**：PB14（传感器1）、PB15（传感器2）
 - **烟雾 MQ-2**：PC0(AO, ADC 通道 10)、PB10(DO)
 - **风扇**：PB0(TIM3_CH3 PWM)

@@ -2,10 +2,10 @@
 #include "io.h"        /* GPIO_init / ADC_init 初始化封装 */
 
 /* ====== 引脚 / 通道 / 阈值（换线只改这里） ====== */
-/* X 轴 = PB1, Y 轴 = PC4, SW(按下) = PA2 */
+/* X 轴 = PB1, Y 轴 = PC4, SW(按下) = PC5 */
 #define JOY_X_PIN    GPIO_Pin_1     /* PB1 */
 #define JOY_Y_PIN    GPIO_Pin_4     /* PC4 */
-#define JOY_SW_PIN   GPIO_Pin_2     /* PA2, 上拉, 按下为低 */
+#define JOY_SW_PIN   GPIO_Pin_5     /* PC5, 上拉, 按下为低 */
 #define JOY_X_CH     ADC_Channel_9  /* PB1 = ADC 通道 9  */
 #define JOY_Y_CH     ADC_Channel_14 /* PC4 = ADC 通道 14 */
 #define JOY_MID_MIN  1500           /* 死区下限（现场可调） */
@@ -72,7 +72,7 @@ void joystick_init(void)
     GPIO_init(RCC_APB2Periph_TYPE_C, JOY_Y_PIN, GPIO_Mode_AIN, GPIOC);
     
     // 初始化摇杆 SW 按键引脚：配置为上拉输入模式（IPU），未按下时读取高电平，按下时读取低电平
-    GPIO_init(RCC_APB2Periph_TYPE_A, JOY_SW_PIN, GPIO_Mode_IPU, GPIOA);
+    GPIO_init(RCC_APB2Periph_TYPE_C, JOY_SW_PIN, GPIO_Mode_IPU, GPIOC);
 
     /*------------------- ADC 配置部分 -------------------*/
     // 初始化 ADC1 参数：
@@ -139,7 +139,7 @@ u8 joystick_pressed(void)
 {
     static u8 sw_stable = 1;   /* 消抖后稳定态, 松开 = 1 */
     static u8 debounce  = 0;
-    u8 raw = GPIO_ReadInputDataBit(GPIOA, JOY_SW_PIN);
+    u8 raw = GPIO_ReadInputDataBit(GPIOC, JOY_SW_PIN);
     u8 evt = 0;
     if (raw != sw_stable) {
         if (++debounce >= SW_DEBOUNCE) {
