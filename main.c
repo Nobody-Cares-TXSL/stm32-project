@@ -4,6 +4,7 @@
 #include "joystick.h"
 #include "smoke.h"
 #include "fan.h"     /* fan_init */
+#include "light.h"   /* light_init */
 #include "menu.h"
 #include "lcd.h"
 
@@ -15,6 +16,7 @@ int main(void)
     joystick_init();    /* ADC(X=PB1, Y=PC4) + SW(PA2) */
     smoke_init();    /* 烟雾：PC0(AO) + PB10(DO)；ADC1 由 joystick_init 已就绪 */
     fan_init();    /* fan: PB0(TIM3_CH3 PWM) */
+    light_init();  /* light: PC3(AO) + PB13(DO); ADC1 ready */
 
     ui_login("欢迎进入");
     delay_s(2);

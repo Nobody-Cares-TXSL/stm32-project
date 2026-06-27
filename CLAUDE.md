@@ -26,6 +26,8 @@ code/
   smoke_view.c / smoke_view.h  
   fan.c / fan.h              PB0 TIM3_CH3 PWM 
   fan_view.c / fan_view.h    风扇控制视图
+  light.c / light.h          PC3(AO ADC13) + PB13(DO) light sensor
+  light_view.c / light_view.h    光敏传感器视图
   lcd.c / lcd.h              LCD 底层驱动
   lcd_ui.c / lcd_ui.h        LCD 上层封装（登录画面等）
   lcdfont.h                  16px 中文字模（GB2312）
@@ -65,6 +67,7 @@ code/
 - **DHT11**：PB14（传感器1）、PB15（传感器2）
 - **烟雾 MQ-2**：PC0(AO, ADC 通道 10)、PB10(DO)
 - **风扇**：PB0(TIM3_CH3 PWM)
+- **光敏**：PC3(AO, ADC通道 13)、PB13(DO)
 - **LCD**：128x128，SPI 驱动，16px 字号，`lcdfont.h` 含 GB2312 中文字模
 - **引脚定义**：全部在 `io.h` 用宏集中定义，硬件连接变动只改此处
 - **模块新增**：新 `.c/.h` 文件放入 `code/`，头文件包含 `stm32f10x.h`，`xxx_init()` 在 `main.c` 的 `joystick_init()` 后调用（确保 ADC1 已初始化）
