@@ -3,6 +3,7 @@
 #include "lcd.h"        /* LCD_Fill / LCD_ShowChar / LCD_ShowChinese + BLACK/WHITE/BLUE */
 #include "th_view.h"    /* 温湿度模块视图回调 */
 #include "smoke_view.h"   /* 烟雾模块视图回调 */
+#include <string.h>     /* memset */
 #include <stdio.h>      /* sprintf */
 
 /* ====== 菜单项表：增删菜单、挂模块只动这里 ====== */
@@ -48,6 +49,7 @@ static void menu_draw(void)
     LCD_Fill(0, 0, 128, 128, BLACK);
     for (i = 0; i < MENU_COUNT; i++) {
         char line[32];
+        memset(line, 0, sizeof(line));
         u16 fc = (i == menu_confirmed) ? BLUE : WHITE;
         sprintf(line, "%s%s", (i == menu_cursor) ? MENU_PREFIX : "  ", menu_items[i].text);
         menu_show_line(MENU_X, i * MENU_ROW_H, (const u8 *)line, fc, BLACK);
