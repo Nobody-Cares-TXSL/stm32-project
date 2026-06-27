@@ -23,11 +23,11 @@ static u16 fm_tick     = 0;
 static void fm_draw_ao(u8 sensor, u16 y)
 {
     char buf[8];
-    u8 pct = (u8)((u32)(4096 - fm_ao[sensor]) * 100 / 4096);
+    u16 pct = fm_ao[sensor];
     LCD_Fill(0, y, 128, y + 16, BLACK);
     LCD_ShowChinese(0, y, (u8 *)"»ðÑæ", WHITE, BLACK, 16, 0);  /* 32px */
     LCD_ShowString(32, y, (u8 *)(sensor ? "2:" : "1:"), WHITE, BLACK, 16, 0);  /* 16px */
-    sprintf(buf, "%d%%", pct);
+    sprintf(buf, "%d", pct);
     LCD_ShowString(48, y, (u8 *)buf, WHITE, BLACK, 16, 0);
 }
 

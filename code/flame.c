@@ -16,7 +16,7 @@
 #define F2_DO_PIN   GPIO_Pin_12      /* PB12 */
 
 /* 有效电平：1=低电平触发（常见），0=高电平触发 */
-#define FLAME_DO_ACTIVE_LOW  1
+#define FLAME_DO_ACTIVE_LOW  0
 
 /* ADC1 由 joystick_init() 初始化（单次转换、软件触发、右对齐、55.5 周期、已校准）。
  * 本项目现有 5 个模块复用 ADC1（joystick/smoke/light/flame×2），后续应统一抽公共 adc.c。 */
