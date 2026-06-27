@@ -2,18 +2,21 @@
 #define __LEDSTRIP_H
 #include "stm32f10x.h"
 
-/* 灯带模块驱动：WS2812B 幻彩灯带，DIN 引脚软件位脉冲协议
- * 灯带 1: PC12(DIN)，灯带 2: PC11(DIN)
- * 最大灯珠数可配，默认 30
+/* WS2812B LED strip driver
+ * strip 1: PC12(DIN), 7 LEDs
+ * strip 2: PC11(DIN), 9 LEDs
+ * mode: 0=off, 1=yellow blink, 2=orange blink, 3=red blink
  */
 
 #define LEDSTRIP_1      0
 #define LEDSTRIP_2      1
-#define LS1_MAX  7               /* strip 1 max */
-#define LS2_MAX  9               /* strip 2 max */
+#define LS1_MAX         7       /* strip 1 physical LED count */
+#define LS2_MAX         9       /* strip 2 physical LED count */
+#define LS_MODE_MAX     3       /* mode range 0-3 */
 
-void ledstrip_init(void);                    /* 初始化两个 DIN 引脚 */
-void ledstrip_set_count(u8 strip, u8 count); /* 点亮前 count 个灯珠（白），其余灭 */
-u8   ledstrip_get_count(u8 strip);           /* 查询当前点亮数 */
+void ledstrip_init(void);                     /* init DIN GPIO, all off */
+void ledstrip_set_mode(u8 strip, u8 mode);     /* set mode (0-off .. 3-red) */
+u8   ledstrip_get_mode(u8 strip);              /* get current mode */
+void ledstrip_tick(void);                      /* call every main loop for blink */
 
 #endif /* __LEDSTRIP_H */
