@@ -6,6 +6,7 @@
 #include "fan.h"     /* fan_init */
 #include "light.h"   /* light_init */
 #include "flame.h"   /* flame_init */
+#include "pump.h"    /* pump_init */
 #include "menu.h"
 #include "lcd.h"
 
@@ -20,6 +21,7 @@ int main(void)
     light_init();  /* light: PC3(AO) + PB13(DO); ADC1 ready */
 
     flame_init();   /* flame: PC1/PC2(AO) + PB11/PB12(DO); ADC1 ready */
+    pump_init();   /* pump: PA1 GPIO -> relay IN1 */
     ui_login("»¶Ó­½øÈë");
     delay_s(2);
     LCD_Fill(0, 0, 128, 128, BLACK);

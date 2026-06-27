@@ -6,6 +6,7 @@
 #include "fan_view.h"   /* fan module */
 #include "light_view.h"   /* light module */
 #include "flame_view.h"  /* flame module */
+#include "pump_view.h"   /* pump module */
 #include <string.h>     /* memset */
 #include <stdio.h>      /* sprintf */
 
@@ -16,6 +17,7 @@ static const menu_item_t menu_items[] = {
     { "风扇模块", fan_view_enter, fan_view_tick, fan_view_on_event },   /* fan module */
     { "光敏模块", light_view_enter, light_view_tick, light_view_on_event }, /* light module */
     { "火焰传感器", flame_view_enter, flame_view_tick, flame_view_on_event }, /* flame module (dual sensor) */
+    { "水泵模块", pump_view_enter, pump_view_tick, pump_view_on_event }, /* pump module */
 };
 #define MENU_COUNT (sizeof(menu_items) / sizeof(menu_items[0]))
 
