@@ -1,4 +1,5 @@
 #include "stm32f10x.h"
+#include <stdio.h>     /* printf */
 #include "delay.h"
 #include "lcd_ui.h"    /* ui_init */
 #include "joystick.h"
