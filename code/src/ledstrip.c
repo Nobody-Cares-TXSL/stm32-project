@@ -9,11 +9,18 @@
 #define LS2_PIN     GPIO_Pin_11      /* PC11 = strip 2 DIN */
 #define LS2_CLK     RCC_APB2Periph_TYPE_C
 
-/* ====== WS2812B timing @72MHz (direct BSRR, nop loop ~42ns/iter) ====== */
-#define WS_T0H  7     /* T0H ~0.35us: HIGH time */
-#define WS_T0L  22    /* T0L ~0.80us: LOW time */
-#define WS_T1H  16    /* T1H ~0.70us: HIGH time */
-#define WS_T1L  8     /* T1L ~0.60us: LOW time */
+/*
+ * WS2812B timing @72MHz
+ * Each __NOP() = 1 cycle = 13.89ns
+ * BSRR write = ~1 cycle
+ * Inline NOPs (no loop, no function call) => timing exact at any optim level
+ *
+ * 0-bit: HIGH ~361ns(26cyc), LOW ~847ns(61cyc), total ~1236ns
+ * 1-bit: HIGH ~708ns(51cyc), LOW ~458ns(33cyc), total ~1167ns
+ * Threshold ~500ns => 0-bit 361ns < 500ns, 1-bit 708ns > 500ns
+ */
+#define NOP10  __NOP();__NOP();__NOP();__NOP();__NOP(); \
+              __NOP();__NOP();__NOP();__NOP();__NOP()
 
 /* ====== blink config ====== */
 #define LS_BLINK_TICKS  50   /* ~500ms at 10ms/tick */
@@ -23,51 +30,49 @@ static u8  ls_mode[2]      = {0, 0};
 static u8  ls_blink_on[2]  = {0, 0};
 static u16 ls_blink_cnt[2] = {0, 0};
 
-/* nop loop delay */
-static void ws_delay(u32 n)
-{
-    while (n--) __nop();
-}
-
-/* send one bit (direct BSRR register access) */
-static void ws_send_bit(GPIO_TypeDef *port, u16 pin, u8 bit)
+/* send one bit - inline NOPs for deterministic timing */
+static void ws_send_bit(volatile GPIO_TypeDef *port, u32 high, u32 low, u8 bit)
 {
     if (bit) {
-        port->BSRR = pin;         /* set HIGH */
-        ws_delay(WS_T1H);
-        port->BSRR = pin << 16;   /* set LOW */
-        ws_delay(WS_T1L);
+        port->BSRR = high;
+        NOP10; NOP10; NOP10; NOP10; NOP10;   /* 50 nops */
+        port->BSRR = low;
+        NOP10; NOP10; NOP10;
+        __NOP(); __NOP();                     /* 32 nops total */
     } else {
-        port->BSRR = pin;         /* set HIGH */
-        ws_delay(WS_T0H);
-        port->BSRR = pin << 16;   /* set LOW */
-        ws_delay(WS_T0L);
+        port->BSRR = high;
+        NOP10; NOP10;
+        __NOP(); __NOP(); __NOP(); __NOP(); __NOP();  /* 25 nops total */
+        port->BSRR = low;
+        NOP10; NOP10; NOP10; NOP10; NOP10;
+        NOP10;                                /* 60 nops total */
     }
 }
 
 /* send one byte MSB first */
-static void ws_send_byte(GPIO_TypeDef *port, u16 pin, u8 byte)
+static void ws_send_byte(volatile GPIO_TypeDef *port, u32 high, u32 low, u8 byte)
 {
     u8 i;
     for (i = 0; i < 8; i++) {
-        ws_send_bit(port, pin, byte & 0x80);
+        ws_send_bit(port, high, low, byte & 0x80);
         byte <<= 1;
     }
 }
 
 /* send GRB color (WS2812B byte order: G-R-B) */
-static void ws_send_color(GPIO_TypeDef *port, u16 pin, u8 r, u8 g, u8 b)
+static void ws_send_color(volatile GPIO_TypeDef *port, u32 high, u32 low, u8 r, u8 g, u8 b)
 {
-    ws_send_byte(port, pin, g);
-    ws_send_byte(port, pin, r);
-    ws_send_byte(port, pin, b);
+    ws_send_byte(port, high, low, g);
+    ws_send_byte(port, high, low, r);
+    ws_send_byte(port, high, low, b);
 }
 
 /* reset (>50us LOW) */
-static void ws_reset(GPIO_TypeDef *port, u16 pin)
+static void ws_reset(volatile GPIO_TypeDef *port, u32 low)
 {
-    port->BSRR = pin << 16;
-    ws_delay(4000);   /* ~60us */
+    u16 i;
+    port->BSRR = low;
+    for (i = 0; i < 400; i++) __NOP();   /* 400 nops ~5.6us * 9 = ~50us */
 }
 
 /* get RGB for mode */
@@ -84,8 +89,10 @@ static void mode_color(u8 mode, u8 *r, u8 *g, u8 *b)
 /* send all LEDs for one strip */
 static void ledstrip_send(u8 strip)
 {
-    GPIO_TypeDef *port = (strip == LEDSTRIP_1) ? LS1_PORT : LS2_PORT;
+    volatile GPIO_TypeDef *port = (strip == LEDSTRIP_1) ? LS1_PORT : LS2_PORT;
     u16 pin = (strip == LEDSTRIP_1) ? LS1_PIN : LS2_PIN;
+    u32 high = pin;
+    u32 low  = pin << 16;
     u8 max = (strip == LEDSTRIP_1) ? LS1_MAX : LS2_MAX;
     u8 r, g, b, i;
     u8 on = ls_blink_on[strip] && (ls_mode[strip] != 0);
@@ -94,12 +101,12 @@ static void ledstrip_send(u8 strip)
     for (i = 0; i < max; i++) {
         if (on) {
             mode_color(ls_mode[strip], &r, &g, &b);
-            ws_send_color(port, pin, r, g, b);
+            ws_send_color(port, high, low, r, g, b);
         } else {
-            ws_send_color(port, pin, 0, 0, 0);
+            ws_send_color(port, high, low, 0, 0, 0);
         }
     }
-    ws_reset(port, pin);
+    ws_reset(port, low);
     __enable_irq();
 }
 
@@ -131,7 +138,7 @@ void ledstrip_tick(void)
 {
     u8 s;
     for (s = 0; s < 2; s++) {
-        if (ls_mode[s] == 0) continue;   /* off, skip */
+        if (ls_mode[s] == 0) continue;
         ls_blink_cnt[s]++;
         if (ls_blink_cnt[s] >= LS_BLINK_TICKS) {
             ls_blink_cnt[s] = 0;
