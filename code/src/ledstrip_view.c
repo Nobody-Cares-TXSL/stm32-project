@@ -64,7 +64,7 @@ void ledstrip_view_enter(void)
 
 void ledstrip_view_tick(void)
 {
-    ledstrip_tick();   /* drive blink state machine */
+    /* ledstrip_tick 由 alarm 引擎统一驱动（任何视图态都闪） */
 }
 
 u8 ledstrip_view_on_event(u8 ev, u8 sw)
