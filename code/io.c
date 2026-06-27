@@ -1,13 +1,13 @@
-#include "io.h"/* æŒ‰é”® ISR å†™ state_dirty / key_event */
-#include "delay.h"		/* Get_Adc_Average ç”¨ delay_ms */
+#include "io.h"/* °´¼ü ISR Ğ´ state_dirty / key_event */
+#include "delay.h"		/* Get_Adc_Average ÓÃ delay_ms */
 
-/* åˆå§‹åŒ–ç»“æ„ä½“ï¼ˆä»…æœ¬æ–‡ä»¶ä½¿ç”¨ï¼Œå°è£…ä¸º staticï¼‰ */
+/* ³õÊ¼»¯½á¹¹Ìå£¨½ö±¾ÎÄ¼şÊ¹ÓÃ£¬·â×°Îª static£© */
 static GPIO_InitTypeDef GPIO_InitStructure;
 static EXTI_InitTypeDef EXTI_InitStruct;
 static NVIC_InitTypeDef NVIC_InitStruct;
 static ADC_InitTypeDef ADC_InitStruct;
 
-// åˆå§‹åŒ– GPIO
+// ³õÊ¼»¯ GPIO
 void GPIO_init(uint32_t pin_type, uint16_t pin, GPIOMode_TypeDef mode, GPIO_TypeDef* GPIOx)
 {
 	RCC_APB2PeriphClockCmd(pin_type, ENABLE);
@@ -17,7 +17,7 @@ void GPIO_init(uint32_t pin_type, uint16_t pin, GPIOMode_TypeDef mode, GPIO_Type
 	GPIO_Init(GPIOx, &GPIO_InitStructure);
 }
 
-// åˆå§‹åŒ– EXTI
+// ³õÊ¼»¯ EXTI
 void EXTI_init(uint8_t port_source, uint8_t pin_source, uint32_t line, EXTITrigger_TypeDef trigger)
 {
 	GPIO_EXTILineConfig(port_source, pin_source);
@@ -28,7 +28,7 @@ void EXTI_init(uint8_t port_source, uint8_t pin_source, uint32_t line, EXTITrigg
 	EXTI_Init(&EXTI_InitStruct);
 }
 
-// åˆå§‹åŒ– NVIC
+// ³õÊ¼»¯ NVIC
 void NVIC_init(uint8_t irq_channel, uint8_t preemption_priority, uint8_t sub_priority)
 {
 	NVIC_InitStruct.NVIC_IRQChannel = irq_channel;
@@ -38,7 +38,7 @@ void NVIC_init(uint8_t irq_channel, uint8_t preemption_priority, uint8_t sub_pri
 	NVIC_Init(&NVIC_InitStruct);
 }
 
-// åˆå§‹åŒ– ADC
+// ³õÊ¼»¯ ADC
 void ADC_init(ADC_TypeDef* ADCx, uint32_t mode, FunctionalState scan, FunctionalState cont, uint32_t trig, uint32_t align, uint8_t nch)
 {
 	ADC_DeInit(ADCx);

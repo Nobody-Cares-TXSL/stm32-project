@@ -1,6 +1,6 @@
 #include "delay.h"
-/* ====== SysTick æ—¶é’Ÿå»¶æ—¶ ====== */
-/* 72MHz / 8 = 9MHzï¼Œæ¯è®¡æ•° 1 æ¬¡ = 1/9 å¾®ç§’ */
+/* ====== SysTick Ê±ÖÓÑÓÊ± ====== */
+/* 72MHz / 8 = 9MHz£¬Ã¿¼ÆÊı 1 ´Î = 1/9 Î¢Ãë */
 void delay_us(u32 nus)
 {
 	u32 temp;
@@ -21,14 +21,14 @@ void delay_ms(u32 ms)
 }
 
 /**
- * @brief  ç§’çº§å»¶æ—¶å‡½æ•°
- * @param  sec éœ€è¦å»¶æ—¶çš„ç§’æ•°
- * @retval æ— 
+ * @brief  Ãë¼¶ÑÓÊ±º¯Êı
+ * @param  sec ĞèÒªÑÓÊ±µÄÃëÊı
+ * @retval ÎŞ
  */
 void delay_s(u32 sec)
 {
     while (sec--) {
-        delay_ms(1000); // å¾ªç¯è°ƒç”¨1000æ¬¡1mså»¶æ—¶
+        delay_ms(1000); // Ñ­»·µ÷ÓÃ1000´Î1msÑÓÊ±
     }
 }
 

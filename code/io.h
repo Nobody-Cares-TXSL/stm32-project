@@ -3,14 +3,14 @@
 
 #include "stm32f10x.h"
 
-/* ====== æ—¶é’Ÿæ—¶èƒ½ä½ç±»å‹ ====== */
-#define RCC_APB2Periph_TYPE_A RCC_APB2Periph_GPIOA // GPIOA çš„æ—¶é’Ÿä½¿èƒ½ä½
-#define RCC_APB2Periph_TYPE_B RCC_APB2Periph_GPIOB // GPIOB çš„æ—¶é’Ÿä½¿èƒ½ä½
-#define RCC_APB2Periph_TYPE_C RCC_APB2Periph_GPIOC // GPIOC çš„æ—¶é’Ÿä½¿èƒ½ä½
+/* ====== Ê±ÖÓÊ±ÄÜÎ»ÀàĞÍ ====== */
+#define RCC_APB2Periph_TYPE_A RCC_APB2Periph_GPIOA // GPIOA µÄÊ±ÖÓÊ¹ÄÜÎ»
+#define RCC_APB2Periph_TYPE_B RCC_APB2Periph_GPIOB // GPIOB µÄÊ±ÖÓÊ¹ÄÜÎ»
+#define RCC_APB2Periph_TYPE_C RCC_APB2Periph_GPIOC // GPIOC µÄÊ±ÖÓÊ¹ÄÜÎ»
 
-/* ====== å¼•è„šç±»å‹ ====== */
-#define GPIO_PortSource_TYPE_A GPIO_PortSourceGPIOA // GPIOA å¼•è„š
-#define GPIO_PortSource_TYPE_C GPIO_PortSourceGPIOC // GPIOC å¼•è„š
+/* ====== Òı½ÅÀàĞÍ ====== */
+#define GPIO_PortSource_TYPE_A GPIO_PortSourceGPIOA // GPIOA Òı½Å
+#define GPIO_PortSource_TYPE_C GPIO_PortSourceGPIOC // GPIOC Òı½Å
 
 
 
