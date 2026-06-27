@@ -3,6 +3,7 @@
 #include "lcd.h"        /* LCD_Fill / LCD_ShowChar / LCD_ShowChinese + BLACK/WHITE/BLUE */
 #include "th_view.h"    /* 温湿度模块视图回调 */
 #include "smoke_view.h"   /* 烟雾模块视图回调 */
+#include "fan_view.h"   /* fan module */
 #include <string.h>     /* memset */
 #include <stdio.h>      /* sprintf */
 
@@ -10,7 +11,7 @@
 static const menu_item_t menu_items[] = {
     { "温湿度模块", th_view_enter, th_view_tick, th_view_on_event },  /* 点击进入数据视图 */
     { "烟雾报警器", smoke_view_enter, smoke_view_tick, smoke_view_on_event },   /* 烟雾模块 */
-    { "zxc",        NULL, NULL, NULL },
+    { "风扇模块", fan_view_enter, fan_view_tick, fan_view_on_event },   /* fan module */
     { "iop",        NULL, NULL, NULL },
 };
 #define MENU_COUNT (sizeof(menu_items) / sizeof(menu_items[0]))

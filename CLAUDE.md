@@ -23,11 +23,13 @@ code/
   joystick.c / joystick.h    摇杆 ADC + SW 按键
   dht.c / dht.h              DHT11 温湿度驱动
   smoke.c / smoke.h          MQ-2 烟雾传感器驱动
-  smoke_view.c / smoke_view.h  烟雾报警器视图
+  smoke_view.c / smoke_view.h  
+  fan.c / fan.h              PB0 TIM3_CH3 PWM 
+  fan_view.c / fan_view.h    风扇控制视图
   lcd.c / lcd.h              LCD 底层驱动
   lcd_ui.c / lcd_ui.h        LCD 上层封装（登录画面等）
   lcdfont.h                  16px 中文字模（GB2312）
-  io.c / io.h                GPIO/EXTI/NVIC/ADC 通用初始化
+  io.c / io.h                GPIO/EXTI/NVIC/ADC/TIM 通用初始化
   delay.c / delay.h          延时函数
   sys.h                      系统级宏
 ```
@@ -62,6 +64,7 @@ code/
 - **摇杆 ADC**：PB1(X)/PC4(Y)，SW(PA2，板子设计为 USART2_TX，当前暂借给摇杆)，死区 1500-2500，边沿触发
 - **DHT11**：PB14（传感器1）、PB15（传感器2）
 - **烟雾 MQ-2**：PC0(AO, ADC 通道 10)、PB10(DO)
+- **风扇**：PB0(TIM3_CH3 PWM)
 - **LCD**：128x128，SPI 驱动，16px 字号，`lcdfont.h` 含 GB2312 中文字模
 - **引脚定义**：全部在 `io.h` 用宏集中定义，硬件连接变动只改此处
 - **模块新增**：新 `.c/.h` 文件放入 `code/`，头文件包含 `stm32f10x.h`，`xxx_init()` 在 `main.c` 的 `joystick_init()` 后调用（确保 ADC1 已初始化）

@@ -1,11 +1,13 @@
-#include "io.h"/* 按键 ISR 写 state_dirty / key_event */
+#include "io.h"/* 按 ISR 写 state_dirty / key_event */
 #include "delay.h"		/* Get_Adc_Average 用 delay_ms */
 
-/* 初始化结构体（仅本文件使用，封装为 static） */
+/* 初始化结构体（本文件内使用，封装为 static） */
 static GPIO_InitTypeDef GPIO_InitStructure;
 static EXTI_InitTypeDef EXTI_InitStruct;
 static NVIC_InitTypeDef NVIC_InitStruct;
 static ADC_InitTypeDef ADC_InitStruct;
+static TIM_TimeBaseInitTypeDef TIM_TB_InitStruct;
+static TIM_OCInitTypeDef TIM_OC_InitStruct;
 
 // 初始化 GPIO
 void GPIO_init(uint32_t pin_type, uint16_t pin, GPIOMode_TypeDef mode, GPIO_TypeDef* GPIOx)
@@ -51,3 +53,29 @@ void ADC_init(ADC_TypeDef* ADCx, uint32_t mode, FunctionalState scan, Functional
 	ADC_Init(ADCx, &ADC_InitStruct);
 }
 
+// 初始化 TIM 时基（调用前需自行使能 RCC 时钟）
+void TIM_base_init(TIM_TypeDef* TIMx, uint16_t psc, uint16_t arr)
+{
+	TIM_TB_InitStruct.TIM_Prescaler = psc;
+	TIM_TB_InitStruct.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TB_InitStruct.TIM_Period = arr;
+	TIM_TB_InitStruct.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseInit(TIMx, &TIM_TB_InitStruct);
+	TIM_ARRPreloadConfig(TIMx, ENABLE);
+}
+
+// 初始化 TIM PWM 输出通道（内部启用 TIM_Cmd）
+void TIM_pwm_init(TIM_TypeDef* TIMx, uint16_t channel, uint16_t pulse, uint8_t polarity_high)
+{
+	TIM_OC_InitStruct.TIM_OCMode = TIM_OCMode_PWM1;
+	TIM_OC_InitStruct.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OC_InitStruct.TIM_Pulse = pulse;
+	TIM_OC_InitStruct.TIM_OCPolarity = polarity_high ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
+	switch (channel) {
+		case 1: TIM_OC1Init(TIMx, &TIM_OC_InitStruct); TIM_OC1PreloadConfig(TIMx, TIM_OCPreload_Enable); break;
+		case 2: TIM_OC2Init(TIMx, &TIM_OC_InitStruct); TIM_OC2PreloadConfig(TIMx, TIM_OCPreload_Enable); break;
+		case 3: TIM_OC3Init(TIMx, &TIM_OC_InitStruct); TIM_OC3PreloadConfig(TIMx, TIM_OCPreload_Enable); break;
+		case 4: TIM_OC4Init(TIMx, &TIM_OC_InitStruct); TIM_OC4PreloadConfig(TIMx, TIM_OCPreload_Enable); break;
+	}
+	TIM_Cmd(TIMx, ENABLE);
+}
