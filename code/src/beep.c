@@ -6,9 +6,9 @@
 #define BEEP_PIN     GPIO_Pin_4       /* PA4 -> buzzer */
 #define BEEP_CLK     RCC_APB2Periph_TYPE_A
 
-/* active high: pin=HIGH -> beep on */
-#define BEEP_ON_LEVEL   1
-#define BEEP_OFF_LEVEL  0
+/* active low: pin=LOW -> beep on (common buzzer module) */
+#define BEEP_ON_LEVEL   0
+#define BEEP_OFF_LEVEL  1
 
 static u8 beep_state = 0;
 
