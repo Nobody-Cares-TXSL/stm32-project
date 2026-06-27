@@ -29,4 +29,7 @@ void ADC_init(ADC_TypeDef* ADCx, uint32_t mode, FunctionalState scan, Functional
 void TIM_base_init(TIM_TypeDef* TIMx, uint16_t psc, uint16_t arr);
 void TIM_pwm_init(TIM_TypeDef* TIMx, uint16_t channel, uint16_t pulse, uint8_t polarity_high);
 
+/* ====== ´®¿Ú ====== */
+void USART_init(USART_TypeDef* USARTx, uint32_t baud, uint16_t word_length, uint16_t stop_bits, uint16_t parity, uint16_t mode);
+
 #endif /* __IO_H */

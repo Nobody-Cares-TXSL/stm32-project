@@ -8,6 +8,7 @@ static NVIC_InitTypeDef NVIC_InitStruct;
 static ADC_InitTypeDef ADC_InitStruct;
 static TIM_TimeBaseInitTypeDef TIM_TB_InitStruct;
 static TIM_OCInitTypeDef TIM_OC_InitStruct;
+static USART_InitTypeDef USART_InitStruct;
 
 // 初始化 GPIO
 void GPIO_init(uint32_t pin_type, uint16_t pin, GPIOMode_TypeDef mode, GPIO_TypeDef* GPIOx)
@@ -78,4 +79,16 @@ void TIM_pwm_init(TIM_TypeDef* TIMx, uint16_t channel, uint16_t pulse, uint8_t p
 		case 4: TIM_OC4Init(TIMx, &TIM_OC_InitStruct); TIM_OC4PreloadConfig(TIMx, TIM_OCPreload_Enable); break;
 	}
 	TIM_Cmd(TIMx, ENABLE);
+}
+
+// 初始化 USART 配置（波特率/字长/停止位/校验/模式；GPIO/时钟/NVIC 由调用方处理）
+void USART_init(USART_TypeDef* USARTx, uint32_t baud, uint16_t word_length, uint16_t stop_bits, uint16_t parity, uint16_t mode)
+{
+	USART_InitStruct.USART_BaudRate = baud;
+	USART_InitStruct.USART_WordLength = word_length;
+	USART_InitStruct.USART_StopBits = stop_bits;
+	USART_InitStruct.USART_Parity = parity;
+	USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	USART_InitStruct.USART_Mode = mode;
+	USART_Init(USARTx, &USART_InitStruct);
 }

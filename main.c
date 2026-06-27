@@ -9,12 +9,15 @@
 #include "pump.h"    /* pump_init */
 #include "ledstrip.h" /* ledstrip_init */
 #include "beep.h"    /* beep_init */
+#include "usart.h"   /* USART1 调试 log */
 #include "menu.h"
 #include "lcd.h"
 
 int main(void)
 {
     SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
+    USART1_init();      /* 调试串口先开，便于后续 printf */
+    printf("system start");   /* 上电验证：串口助手应收到此句 */
 
     ui_init();          /* LCD init */
     joystick_init();    /* ADC(X=PB1, Y=PC4) + SW(PA2) */
