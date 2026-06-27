@@ -7,6 +7,7 @@
 #include "light.h"   /* light_init */
 #include "flame.h"   /* flame_init */
 #include "pump.h"    /* pump_init */
+#include "ledstrip.h" /* ledstrip_init */
 #include "menu.h"
 #include "lcd.h"
 
@@ -22,6 +23,7 @@ int main(void)
 
     flame_init();   /* flame: PC1/PC2(AO) + PB11/PB12(DO); ADC1 ready */
     pump_init();   /* pump: PA1 GPIO -> relay IN1 */
+    ledstrip_init(); /* ledstrip: PC12(DIN1) + PC11(DIN2) WS2812B */
     ui_login("»¶Ó­½øÈë");
     delay_s(2);
     LCD_Fill(0, 0, 128, 128, BLACK);
