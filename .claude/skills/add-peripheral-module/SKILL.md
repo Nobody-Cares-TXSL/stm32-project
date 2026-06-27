@@ -38,14 +38,14 @@ description: Use when adding a new peripheral module (sensor/actuator: 温湿度
 空闲 ADC 通道脚：PA0/PA1/PC1-PC3/PC5 等。
 空闲 PWM 通道：TIM2_CH1(PA6)/CH2(PA7)/CH3(PB0-已占)/CH4(PB1-ADC)、TIM3_CH1(PA6)/CH2(PA7)等。
 
-### 3. 检查字库（`code/lcdfont.h` 的 `tfont16`）
+### 3. 检查字库（`code/inc/lcdfont.h` 的 `tfont16`）
 显示文案必须用字库已有的字。一行提取清单：
 ```bash
-python3 -c "import re;t=open('code/lcdfont.h','rb').read().decode('gbk',errors='replace');m=re.search(r'tfont16\s*\[\]',t);s=t[m.end():];print(''.join(re.findall(r'/\*\"(.)\"',s[:re.search(r'tfont24',s).start()])))"
+python3 -c "import re;t=open('code/inc/lcdfont.h','rb').read().decode('gbk',errors='replace');m=re.search(r'tfont16\s*\[\]',t);s=t[m.end():];print(''.join(re.findall(r'/\*\"(.)\"',s[:re.search(r'tfont24',s).start()])))"
 ```
 缺字时优先用现有字 + ASCII 规避（如"浓度"缺 → 用"烟雾"+数字）；实在要新字再问用户加字模。
 
-### 4. 写驱动（`code/xxx.c` + `xxx.h`，新建 GB2312）
+### 4. 写驱动（`code/src/xxx.c` + `code/inc/xxx.h`，新建 GB2312）
 - 引脚宏集中在文件顶部（换线只改宏）
 - 复用 `io.c` 的 `GPIO_init(pin_type, pin, mode, GPIOx)`（每次自动使能时钟）；`pin_type` 用 `RCC_APB2Periph_TYPE_A/B/C`；`GPIO_Mode_AF_PP` 用于 PWM 输出引脚
 - **PWM 模块**：复用 `io.c` 的 `TIM_base_init(TIMx, psc, arr)` + `TIM_pwm_init(TIMx, channel, pulse, polarity_high)`（调用前自行 `RCC_APB1PeriphClockCmd` 使能 TIM 时钟）。`fan.c` 是参考实现
@@ -53,7 +53,7 @@ python3 -c "import re;t=open('code/lcdfont.h','rb').read().decode('gbk',errors='
 - 单总线传感器（DHT11）：方向切换 `GPIO_Mode_Out_PP`/`GPIO_Mode_IPU`，所有等待**带超时计数**防卡死
 - API 极简：`xxx_init()` + 控制函数
 
-### 5. 写视图（`code/xxx_view.c` + `xxx_view.h`，新建 GB2312，三件套）
+### 5. 写视图（`code/src/xxx_view.c` + `code/inc/xxx_view.h`，新建 GB2312，三件套）
 标准接口（与 `th_view`/`smoke_view`/`fan_view` 同构）：
 ```c
 void xxx_view_enter(void);             /* 进入：标题+提示+占位 */
@@ -66,7 +66,7 @@ u8   xxx_view_on_event(u8 ev, u8 sw);  /* DOWN 返回 1(=退回主菜单) */
 - **渲染 mode 一律用 0**（见 Common Mistakes）
 - 汉字+数字混排：`LCD_ShowChinese` 画中文（16px/字），`LCD_ShowString` 在其后画 ASCII 数字
 
-### 6. 挂菜单（`code/menu.c`，已 GB2312）
+### 6. 挂菜单（`code/src/menu.c`，已 GB2312）
 - 加 `#include "xxx_view.h"`
 - `menu_items[]` 加一行：`{ "模块名", xxx_view_enter, xxx_view_tick, xxx_view_on_event },`
 - **导航逻辑零改动**
@@ -87,7 +87,7 @@ u8   xxx_view_on_event(u8 ev, u8 sw);  /* DOWN 返回 1(=退回主菜单) */
 **新建文件**——Write 写 UTF-8，再 Python 转 GB2312：
 ```bash
 python3 -c "
-for p in ['code/xxx.h','code/xxx.c','code/xxx_view.h','code/xxx_view.c']:
+for p in ['code/inc/xxx.h','code/src/xxx.c','code/inc/xxx_view.h','code/src/xxx_view.c']:
     t=open(p,'rb').read().decode('utf-8')
     try: open(p,'wb').write(t.encode('gb2312'))
     except UnicodeEncodeError: open(p,'wb').write(t.encode('gbk'))
@@ -99,9 +99,9 @@ for p in ['code/xxx.h','code/xxx.c','code/xxx_view.h','code/xxx_view.c']:
 ```bash
 python3 -c "
 import re
-raw=open('code/menu.c','rb').read()
+raw=open('code/src/menu.c','rb').read()
 raw=raw.replace(b'#include \"menu.h\"', b'#include \"xxx.h\"\n#include \"menu.h\"')
-open('code/menu.c','wb').write(raw)
+open('code/src/menu.c','wb').write(raw)
 "
 ```
 > bytes 字面量含双引号时，**外层用单引号** `b'#include "x.h"'`，否则闭引号被吞。
@@ -112,7 +112,7 @@ open('code/menu.c','wb').write(raw)
 
 **改完读回验证**：
 ```bash
-python3 -c "print(open('code/menu.c','rb').read().decode('gb2312'))"
+python3 -c "print(open('code/src/menu.c','rb').read().decode('gb2312'))"
 ```
 （终端按 UTF-8 显示 GB2312 会乱码，属正常；关键是 round-trip 无 UnicodeDecodeError）
 
@@ -134,7 +134,7 @@ python3 -c "print(open('code/menu.c','rb').read().decode('gb2312'))"
 - **编码**：源文件全部 GB2312（含 io.c/io.h），无例外；新代码用中文注释
 - **命名**：函数 `snake_case` + 模块前缀（`GPIO_init`/`joystick_event`/`fan_view_enter`）；宏 `UPPER_CASE`（`LED_PIN`/`JOY_MID`）
 - **头文件保护**：`#ifndef __MODULE_H`
-- **位置**：`.c/.h` 放 `code/`；头文件 include `"stm32f10x.h"`
+- **位置**：`.c` 放 `code/src/`，`.h` 放 `code/inc/`；头文件 include `"stm32f10x.h"`
 - **无构建系统**：新 `.c` 需手动加 Keil 工程
 - ISR 共享变量用 `volatile`；文件内部函数用 `static`
 - 硬件宏集中定义（`io.h` 或模块顶部），引脚变动只改宏

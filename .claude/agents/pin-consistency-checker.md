@@ -11,7 +11,7 @@ tools: Read, Grep, Glob, Bash
 ## 引脚来源（真实程度递减）
 
 1. **代码（真实来源，以此为准）**
-   - `code/io.h` — 时钟/端口类型宏
+   - `code/inc/io.h` — 时钟/端口类型宏
    - 各模块 `.c` 顶部 `#define ...PORT/PIN` 与 `GPIO_init(...)` 调用
    - grep 关键词：`GPIO_Pin_`、`GPIOA`/`GPIOB`/`GPIOC`、`ADC_Channel_`、`RCC_APB2Periph_TYPE_`
 2. **文档（应对齐代码）**
@@ -21,7 +21,7 @@ tools: Read, Grep, Glob, Bash
 
 ## 审查步骤
 
-1. **提取代码引脚清单**：grep `code/*.c`、`code/*.h`，为每个模块整理「模块 → 端口+引脚+用途（ADC/GPIO/EXTI）」表。注意区分：
+1. **提取代码引脚清单**：grep `code/src/*.c`、`code/inc/*.h`，为每个模块整理「模块 → 端口+引脚+用途（ADC/GPIO/EXTI）」表。注意区分：
    - LCD：`GPIOB` Pin4-9
    - 摇杆：PB1(X)/PC4(Y)/PA2(SW)
    - 温湿度：PB14/PB15

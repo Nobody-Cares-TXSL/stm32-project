@@ -16,30 +16,37 @@ STM32F10x Ç¶ÈëÊ½ C ÏîÄ¿£¬Ê¹ÓÃ **STM32 ±ê×¼ÍâÉè¿â**£¨·Ç HAL/LL£©£¬C17 ±ê×¼£¬Ä¿±êĞ
 **Superloop + ²Ëµ¥µ÷¶È**Ä£Ê½¡£`main.c` ÎªÈë¿Ú£¬³õÊ¼»¯ºó½øÈëÖ÷Ñ­»·£¬Ã¿ÂÖÍ¨¹ıÒ¡¸ËÊÂ¼şÇı¶¯²Ëµ¥»ò×ÓÄ£¿é¡£
 
 ```
-main.c                      Èë¿Ú + Ö÷Ñ­»·£¨µ÷ÓÃ menu_handle£©
+main.c                      Superloop
 code/
-  menu.c / menu.h            ²Ëµ¥¿ò¼Ü£º¹â±êÒÆ¶¯ + ×ÓÄ£¿éµ÷¶È
-  xxx_view.c / xxx_view.h    ¹¦ÄÜÒ³Ãæ£¨enter/tick/on_event Èı½Ó¿Ú£©
-  joystick.c / joystick.h    Ò¡¸Ë ADC + SW °´¼ü
-  dht.c / dht.h              DHT11 ÎÂÊª¶ÈÇı¶¯
-  smoke.c / smoke.h          MQ-2 ÑÌÎí´«¸ĞÆ÷Çı¶¯
-  smoke_view.c / smoke_view.h  
-  fan.c / fan.h              PB0 TIM3_CH3 PWM 
-  fan_view.c / fan_view.h    ·çÉÈ¿ØÖÆÊÓÍ¼
-  light.c / light.h          PC3(AO ADC13) + PB13(DO) light sensor
-  light_view.c / light_view.h    ¹âÃô´«¸ĞÆ÷ÊÓÍ¼
-  flame.c / flame.h          PC1/PC2(AO) + PB11/PB12(DO) flame x2
-  flame_view.c / flame_view.h
-  pump.c / pump.h            PA1 GPIO -> relay -> water pump
-  pump_view.c / pump_view.h
-  ledstrip.c / ledstrip.h  PC11+PC12 DIN WS2812B
-  ledstrip_view.c / ledstrip_view.h
-  lcd.c / lcd.h              LCD µ×²ãÇı¶¯
-  lcd_ui.c / lcd_ui.h        LCD ÉÏ²ã·â×°£¨µÇÂ¼»­ÃæµÈ£©
-  lcdfont.h                  16px ÖĞÎÄ×ÖÄ££¨GB2312£©
-  io.c / io.h                GPIO/EXTI/NVIC/ADC/TIM Í¨ÓÃ³õÊ¼»¯
-  delay.c / delay.h          ÑÓÊ±º¯Êı
-  sys.h                      ÏµÍ³¼¶ºê
+  src/
+    menu.c
+    joystick.c
+    dht.c
+    smoke.c
+    smoke_view.c
+    fan.c                   PB0 TIM3_CH3 PWM
+    fan_view.c
+    light.c                 PC3(AO ADC13) + PB13(DO)
+    light_view.c
+    flame.c                 PC1/PC2(AO) + PB11/PB12(DO)
+    flame_view.c
+    pump.c                  PA1 GPIO -> relay -> water pump
+    pump_view.c
+    ledstrip.c              PC11+PC12 DIN WS2812B
+    ledstrip_view.c
+    lcd.c                   LCD
+    lcd_ui.c                LCD UI
+    io.c                    GPIO/EXTI/NVIC/ADC/TIM
+    delay.c
+  inc/
+    menu.h, joystick.h, dht.h, delay.h, sys.h
+    smoke.h, smoke_view.h
+    fan.h, fan_view.h
+    light.h, light_view.h
+    flame.h, flame_view.h
+    pump.h, pump_view.h
+    ledstrip.h, ledstrip_view.h
+    lcd.h, lcd_ui.h, lcdfont.h, io.h
 ```
 
 ### ²Ëµ¥Óë×ÓÄ£¿é
@@ -62,7 +69,7 @@ code/
 
 ## ÎÄ¼ş±àÂë
 
-- `code/` ÏÂÈ«²¿Ô´ÎÄ¼şÍ³Ò» **GB2312** ±àÂë£¨Keil °´ GBK ½âÎöÖĞÎÄ£©
+- `code/src/` + `code/inc/` ÏÂÈ«²¿Ô´ÎÄ¼şÍ³Ò» **GB2312** ±àÂë£¨Keil °´ GBK ½âÎöÖĞÎÄ£©
 - ĞÂ½¨ÎÄ¼şĞë×ª GB2312£¨PostToolUse hook »á×Ô¶¯¼ì²âÌáĞÑ£©
 
 ## ¹Ø¼üÔ¼¶¨
@@ -79,4 +86,4 @@ code/
 - **µÆ´ø**£ºPC12(DIN1) + PC11(DIN2) WS2812B
 - **LCD**£º128x128£¬SPI Çı¶¯£¬16px ×ÖºÅ£¬`lcdfont.h` º¬ GB2312 ÖĞÎÄ×ÖÄ£
 - **Òı½Å¶¨Òå**£ºÈ«²¿ÔÚ `io.h` ÓÃºê¼¯ÖĞ¶¨Òå£¬Ó²¼şÁ¬½Ó±ä¶¯Ö»¸Ä´Ë´¦
-- **Ä£¿éĞÂÔö**£ºĞÂ `.c/.h` ÎÄ¼ş·ÅÈë `code/`£¬Í·ÎÄ¼ş°üº¬ `stm32f10x.h`£¬`xxx_init()` ÔÚ `main.c` µÄ `joystick_init()` ºóµ÷ÓÃ£¨È·±£ ADC1 ÒÑ³õÊ¼»¯£©
+- **Ä£¿éĞÂÔö**£ºĞÂ `.c/.h` ÎÄ¼ş·ÅÈë `code/src/`(.c) + `code/inc/`(.h)£¬Í·ÎÄ¼ş°üº¬ `stm32f10x.h`£¬`xxx_init()` ÔÚ `main.c` µÄ `joystick_init()` ºóµ÷ÓÃ£¨È·±£ ADC1 ÒÑ³õÊ¼»¯£©
