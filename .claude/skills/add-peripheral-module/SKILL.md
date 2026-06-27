@@ -31,7 +31,7 @@ description: Use when adding a new peripheral module (sensor/actuator: 温湿度
 无法从代码推断的事实先问清：
 - **信号类型**：数字（DO/GPIO）/ 模拟（AO/ADC）/ 单总线（DHT11）/ PWM（执行器）
 - **引脚**（AO 需 ADC 通道脚；DO 任意 GPIO；PWM 需 TIM 通道脚）
-- **电平逻辑**（DO 低/高电平=触发；PWM 极性）→ 做成可配置宏，烧录后验证
+- **电平逻辑**（DO 低/高电平=触发；PWM 极性）→ 做成可配置宏，烧录后验证。**常见：蜂鸣器模块多为低电平有效（LOW=响）**
 
 ### 2. 检查引脚冲突
 已占用：LCD(PB4-9)、摇杆(PB1/PC4/PA2)、温湿度(PB14/15)、烟雾(PC0/PB10)、风扇(PB0/TIM3_CH3)。
@@ -95,15 +95,40 @@ for p in ['code/inc/xxx.h','code/src/xxx.c','code/inc/xxx_view.h','code/src/xxx_
 "
 ```
 
-**改已有 GB2312 文件**——Python 字节级替换（中文用 `'中文'.encode('gb2312')`）：
+**改已有 GB2312 文件**——Python 字节级替换，**禁止手写 GB2312 字节**（易错且静默失败）：
+
+**第一步：从目标文件提取实际字节**（绝不全凭记忆手写）：
 ```bash
 python3 -c "
-import re
 raw=open('code/src/menu.c','rb').read()
-raw=raw.replace(b'#include \"menu.h\"', b'#include \"xxx.h\"\n#include \"menu.h\"')
+# print repr of the line you want to match, then copy-paste into the replace script
+for i,l in enumerate(raw.split(b'\n')):
+    if b'ledstrip' in l.lower():
+        print(f'line {i+1}: {repr(l)}')
+"
+```
+
+**第二步：用提取的精确字节做替换**（中文用 `'中文'.encode('gb2312')` 生成，或从 repr 直接复制）：
+```bash
+python3 -c "
+raw=open('code/src/menu.c','rb').read()
+raw=raw.replace(b'    { \"\xb5\xc6\xb4\xf8\xc4\xa3\xbf\xe9\", ... },\n',   # <-- 从 repr 复制
+                b'    { \"\xb5\xc6\xb4\xf8\xc4\xa3\xbf\xe9\", ... },\n'
+                b'    { \"\xb7\xe4\xc3\xf9\xc6\xf7\xc4\xa3\xbf\xe9\", ... },\n')
 open('code/src/menu.c','wb').write(raw)
 "
 ```
+
+**第三步：替换后必须验证**（确认改动确实落地，避免静默失败）：
+```bash
+python3 -c "
+raw=open('code/src/menu.c','rb').read()
+for i,l in enumerate(raw.split(b'\n')):
+    if b'beep' in l.lower():
+        print(f'line {i+1}: {repr(l)}')
+"
+```
+> 如果验证输出为空，说明 `replace()` 的搜索串没匹配上——回到第一步检查字节。
 > bytes 字面量含双引号时，**外层用单引号** `b'#include "x.h"'`，否则闭引号被吞。
 > 正则改整行（含行尾中文注释）：`re.compile(b'    xxx_init\\(\\);[^\\n]*')`。
 > `$TMPDIR` 未设置 → 全程 Python 内存方式，不用 iconv 临时文件。
