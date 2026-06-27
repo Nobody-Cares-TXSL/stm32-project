@@ -8,6 +8,7 @@
 #include "flame_view.h"  /* flame module */
 #include "pump_view.h"   /* pump module */
 #include "ledstrip_view.h" /* ledstrip module */
+#include "beep_view.h"   /* beep module */
 #include <string.h>     /* memset */
 #include <stdio.h>      /* sprintf */
 
