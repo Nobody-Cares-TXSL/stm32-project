@@ -15,6 +15,9 @@
 #define FM_Y_DO2    72      /* S2 DO */
 #define FM_Y_HINT  110      /* 返回提示 */
 
+/* SW alarm threshold: ADC below this = fire (0=HW DO only); larger=more sensitive */
+#define FLAME_SW_THRESHOLD  3000
+
 static u16 fm_ao[2]    = {0, 0};
 static u8  fm_alarm[2] = {0, 0};
 static u16 fm_tick     = 0;
@@ -36,8 +39,10 @@ static void fm_draw_do(u8 sensor, u16 y)
 {
     LCD_Fill(0, y, 128, y + 16, BLACK);
     LCD_ShowString(0, y, (u8 *)(sensor ? "DO2:" : "DO1:"), WHITE, BLACK, 16, 0);
-    if (fm_alarm[sensor]) LCD_ShowChinese(32, y, (u8 *)"报警", RED, BLACK, 16, 0);
-    else                  LCD_ShowString(32, y, (u8 *)"SAFE", GREEN, BLACK, 16, 0);
+    if (fm_ao[sensor] < FLAME_SW_THRESHOLD)
+        LCD_ShowChinese(32, y, (u8 *)"报警", RED, BLACK, 16, 0);
+    else
+        LCD_ShowString(32, y, (u8 *)"SAFE", GREEN, BLACK, 16, 0);
 }
 
 void flame_view_enter(void)
