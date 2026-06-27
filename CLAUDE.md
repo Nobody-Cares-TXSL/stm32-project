@@ -22,6 +22,8 @@ code/
   xxx_view.c / xxx_view.h    功能页面（enter/tick/on_event 三接口）
   joystick.c / joystick.h    摇杆 ADC + SW 按键
   dht.c / dht.h              DHT11 温湿度驱动
+  smoke.c / smoke.h          MQ-2 烟雾传感器驱动
+  smoke_view.c / smoke_view.h  烟雾报警器视图
   lcd.c / lcd.h              LCD 底层驱动
   lcd_ui.c / lcd_ui.h        LCD 上层封装（登录画面等）
   lcdfont.h                  16px 中文字模（GB2312）
@@ -50,16 +52,16 @@ code/
 
 ## 文件编码
 
-- `lcd_ui.c`、`main.c`：GBK 编码，含中文字符串
-- `io.c`：UTF-8
-- **新文件统一用 GB2312 编码**，含中文时注意编码一致性
+- `code/` 下全部源文件统一 **GB2312** 编码（Keil 按 GBK 解析中文）
+- 新建文件须转 GB2312（PostToolUse hook 会自动检测提醒）
 
 ## 关键约定
 
 - **串口**：USART1，9600 baud，接收缓冲 `USART1_RX_BUF[100]`
 - **接收处理模式**：效果函数每次处理完**必须** `memset(USART1_RX_BUF, 0, sizeof(...))` + `USART1_RX_STA = 0`，否则主循环重复进入
-- **摇杆 ADC**：PB1(X)/PC4(Y)，SW(PA2)，死区 1500-2500，边沿触发（中点→方向才返回事件）
+- **摇杆 ADC**：PB1(X)/PC4(Y)，SW(PA2，板子设计为 USART2_TX，当前暂借给摇杆)，死区 1500-2500，边沿触发
 - **DHT11**：PB14（传感器1）、PB15（传感器2）
+- **烟雾 MQ-2**：PC0(AO, ADC 通道 10)、PB10(DO)
 - **LCD**：128x128，SPI 驱动，16px 字号，`lcdfont.h` 含 GB2312 中文字模
 - **引脚定义**：全部在 `io.h` 用宏集中定义，硬件连接变动只改此处
-- **模块新增**：新 `.c/.h` 文件放入 `code/`，头文件包含 `stm32f10x.h`
+- **模块新增**：新 `.c/.h` 文件放入 `code/`，头文件包含 `stm32f10x.h`，`xxx_init()` 在 `main.c` 的 `joystick_init()` 后调用（确保 ADC1 已初始化）
