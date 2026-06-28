@@ -1,4 +1,5 @@
 #include "smoke_view.h"
+#include "smoke.h"
 #include "alarm.h"
 #include "lcd.h"       /* LCD_Fill / LCD_ShowChinese / LCD_ShowString + BLACK/WHITE/RED/GREEN */
 #include "joystick.h"  /* JOY_DOWN */
@@ -58,7 +59,7 @@ void smoke_view_tick(void)
     sm_tick = 0;
 
     sm_ao    = alarm_get_smoke();
-    sm_alarm = (alarm_get_smoke_level() >= 1) ? 1 : 0;
+    sm_alarm = smoke_read_alarm();
     sm_draw_ao(sm_ao);
     sm_draw_do(sm_alarm);
 }

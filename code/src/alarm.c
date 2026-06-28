@@ -14,6 +14,7 @@
  * 约定：value > LN 才算达 N 级（严格大于），与文档">X"一致
  * 例外：火焰 AO 反向（KY-026 有火时拉低），见 classify_flame
  * ============================================================ */
+#define ALARM_DEBUG_LOG  /* 调试开关：每秒串口打印 alarm 状态；正式固件注释掉此行 */
 #define SMOKE_L1      200U
 #define SMOKE_L2      800U
 #define SMOKE_L3      2000U
@@ -329,9 +330,9 @@ void alarm_tick(void)
         static u16 log_cnt = 0;
         if (++log_cnt >= 100) {
             log_cnt = 0;
-            printf("[ALARM] L%d smoke=%d flame=%d light=%d T=%d rate=%d fan=%d pump=%d\r\n",
-                   cur_level, s_smoke, s_flame, s_light, s_temp, s_rate,
-                   out_fan_pct, out_pump_on);
+            printf("[ALARM] L%d smoke=%d F1=%d F2=%d light=%d T1=%d H1=%d T2=%d H2=%d rate=%d fan=%d pump=%d beep=%d led=%d\r\n",
+                   cur_level, s_smoke, s_f1, s_f2, s_light, s_t1, s_h1, s_t2, s_h2, s_rate,
+                   out_fan_pct, out_pump_on, beep_cur_on, last_disp_level);
         }
     }
 #endif

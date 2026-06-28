@@ -1,4 +1,5 @@
 #include "light_view.h"
+#include "light.h"
 #include "alarm.h"
 #include "lcd.h"       /* LCD_Fill / LCD_ShowChinese / LCD_ShowString + BLACK/WHITE/RED/GREEN */
 #include "joystick.h"  /* JOY_DOWN */
@@ -58,7 +59,7 @@ void light_view_tick(void)
     lt_tick = 0;
 
     lt_ao    = alarm_get_light();
-    lt_alarm = (alarm_get_light_level() >= 1) ? 1 : 0;
+    lt_alarm = light_read_alarm();
     lt_draw_ao(lt_ao);
     lt_draw_do(lt_alarm);
 }
