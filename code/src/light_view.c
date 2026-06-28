@@ -22,7 +22,7 @@ static u16 lt_tick  = 0;    /* 刷新计数器 */
 static void lt_draw_ao(u16 adc)
 {
     char buf[8];
-    u8 pct = (u8)((u32)(4096 - adc) * 100 / 4096);
+    u8 pct = (u8)((u32)adc * 100 / 4096);
     LCD_Fill(0, LT_Y_AO, 128, LT_Y_AO + 16, BLACK);
     LCD_ShowChinese(0, LT_Y_AO, (u8 *)"光敏", WHITE, BLACK, 16, 0);   /* 2 字 = 32px */
     sprintf(buf, ":%d%%", pct);

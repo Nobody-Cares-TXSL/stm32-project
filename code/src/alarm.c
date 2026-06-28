@@ -91,7 +91,7 @@ static u8  manual_mask = 0;    /* 手动覆盖位掩码 */
 static u8  s_t1 = 0, s_h1 = 0, s_t2 = 0, s_h2 = 0;
 static u16 s_f1 = 0, s_f2 = 0;
 
-#define LIGHT_DARK   3000U      /* AO > 此值 = 暗（阈值待实际标定） */
+#define LIGHT_L1      3276U     /* AO > 此值 = 亮度 80% */
 
 /* ============================================================
  * 单项阈值判定
@@ -165,7 +165,7 @@ static void alarm_eval_levels(void)
 
     lvl_smoke = classify(s_smoke, SMOKE_L1, SMOKE_L2, SMOKE_L3);
     lvl_flame = classify_flame(s_flame);
-    lvl_light = classify(s_light, 2500U, LIGHT_DARK, 4095U);   /* 光敏分类（待标定） */
+    lvl_light = classify(s_light, LIGHT_L1, 3686U, 3932U);   /* 80%/90%/96% 亮度分级 */
     if (s_temp_ok) {
         lt = classify((u16)s_temp, (u16)TEMP_L1, (u16)TEMP_L2, (u16)TEMP_L3);
         lr = classify((u16)s_rate, (u16)RATE_L1, (u16)RATE_L2, (u16)RATE_L3);

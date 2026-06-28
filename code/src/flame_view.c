@@ -20,7 +20,6 @@
 #define FLAME_SW_THRESHOLD  3000
 
 static u16 fm_ao[2]    = {0, 0};
-static u8  fm_alarm[2] = {0, 0};
 static u16 fm_tick     = 0;
 
 /* 画单行 AO：清行 -> "火焰N:" -> "XX%" */
