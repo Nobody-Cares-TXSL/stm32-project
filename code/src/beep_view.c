@@ -1,4 +1,5 @@
 #include "beep_view.h"
+#include "alarm.h"
 #include "beep.h"
 #include "lcd.h"
 #include "joystick.h"
@@ -25,6 +26,7 @@ void beep_view_enter(void)
     bp_draw_state(beep_get_state());
     LCD_ShowString(0, BP_Y_HINT1, (u8 *)"SW:ON/OFF", WHITE, BLACK, 16, 0);
     LCD_ShowString(0, BP_Y_HINT2, (u8 *)"DN:BACK", WHITE, BLACK, 16, 0);
+    alarm_manual_override(ALARM_MANUAL_BEEP);
 }
 
 void beep_view_tick(void)
@@ -34,7 +36,7 @@ void beep_view_tick(void)
 
 u8 beep_view_on_event(u8 ev, u8 sw)
 {
-    if (ev == JOY_DOWN) return 1;     /* DOWN -> back to menu */
+    if (ev == JOY_DOWN) { alarm_manual_release(ALARM_MANUAL_BEEP); return 1; }     /* DOWN -> back to menu */
 
     if (sw) {
         beep_toggle();

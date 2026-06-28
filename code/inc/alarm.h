@@ -49,4 +49,21 @@ u8   alarm_get_pump_on(void);      /* 引擎下发的水泵开关 */
 void alarm_mute(void);             /* 本次仅置 mute_flag */
 u8   alarm_is_muted(void);         /* 1=消音中 */
 
+/* ====== 执行器手动覆盖（view 层调用） ====== */
+#define ALARM_MANUAL_FAN      (1 << 0)
+#define ALARM_MANUAL_PUMP     (1 << 1)
+#define ALARM_MANUAL_LEDSTRIP (1 << 2)
+#define ALARM_MANUAL_BEEP     (1 << 3)
+
+void alarm_manual_override(u8 mask);   /* 设置：进入 view 时调用 */
+void alarm_manual_release(u8 mask);   /* 清除：退出 view 时调用 */
+
+/* ====== 光敏等级 ====== */
+u8   alarm_get_light_level(void);
+
+/* ====== 逐传感器的原始值 getter（view 显示用） ====== */
+u8   alarm_get_temp_n(u8 n);     /* n=1/2, 单路温度 */
+u8   alarm_get_humi_n(u8 n);     /* n=1/2, 单路湿度 */
+u16  alarm_get_flame_n(u8 n);    /* n=1/2, 单路火焰 AO */
+
 #endif /* __ALARM_H */

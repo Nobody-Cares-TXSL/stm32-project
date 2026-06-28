@@ -1,4 +1,5 @@
 #include "fan_view.h"
+#include "alarm.h"
 #include "fan.h"       /* fan_set_speed / fan_get_speed */
 #include "lcd.h"       /* LCD_Fill / LCD_ShowChinese / LCD_ShowString + BLACK/WHITE/RED/GREEN */
 #include "joystick.h"  /* JOY_DOWN / JOY_LEFT / JOY_RIGHT */
@@ -43,6 +44,7 @@ void fan_view_enter(void)
     LCD_ShowString(0, FN_Y_HINT1, (u8 *)"SW:ON/OFF", WHITE, BLACK, 16, 0);
     LCD_ShowString(0, FN_Y_HINT2, (u8 *)"L/R:SPEED", WHITE, BLACK, 16, 0);
     LCD_ShowString(0, FN_Y_HINT3, (u8 *)"DN:BACK", WHITE, BLACK, 16, 0);
+    alarm_manual_override(ALARM_MANUAL_FAN);
 }
 
 void fan_view_tick(void)
@@ -54,7 +56,7 @@ u8 fan_view_on_event(u8 ev, u8 sw)
 {
     u8 speed;
 
-    if (ev == JOY_DOWN) return 1;     /* 下拨 -> 返回主菜单 */
+    if (ev == JOY_DOWN) { alarm_manual_release(ALARM_MANUAL_FAN); return 1; }     /* 下拨 -> 返回主菜单 */
 
     if (sw) {
         /* SW 按下：ON/OFF 切换 */

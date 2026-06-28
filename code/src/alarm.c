@@ -67,7 +67,7 @@ static u8  last_temp  = 0;
 static u8  dht_inited = 0;      /* 首次读取不算速率（避免 last_temp=0 误判） */
 
 /* ====== 单项等级 ====== */
-static u8 lvl_smoke = 0, lvl_temp = 0, lvl_flame = 0;
+static u8 lvl_smoke = 0, lvl_temp = 0, lvl_flame = 0, lvl_light = 0;
 
 /* ====== 防误报 ====== */
 static u8 target_level = ALARM_NORMAL;
@@ -85,6 +85,13 @@ static u8  beep_cur_on     = 0;
 /* ====== 开关 / 消音 ====== */
 static u8 enabled   = 1;
 static u8 mute_flag = 0;        /* 预留 */
+静音剩余 tick（10ms 单位）
+手动覆盖位掩码
+
+static u8  s_t1 = 0, s_h1 = 0, s_t2 = 0, s_h2 = 0;
+static u16 s_f1 = 0, s_f2 = 0;
+
+#define LIGHT_DARK   3000U      /* AO > 此值 = 暗（阈值待实际标定） */
 
 /* ============================================================
  * 单项阈值判定
@@ -117,7 +124,7 @@ static void alarm_sample_adc(void)
     s_smoke = smoke_read_ao();
     f1 = flame_read_ao(FLAME_SENSOR_1);
     f2 = flame_read_ao(FLAME_SENSOR_2);
-    s_flame = (f1 < f2) ? f1 : f2;     /* 取两路最小（小=火，保守取最危险） */
+    s_flame = (f1 < f2) ? f1 : f2;     s_f1 = f1; s_f2 = f2;     /* 取两路最小（小=火，保守取最危险） */
     s_light = light_read_ao();
 }
 
@@ -140,6 +147,9 @@ static void alarm_sample_dht(void)
         dht_inited = 1;
         last_temp = new_temp;
         s_temp = new_temp;
+
+        if (ok1) { s_t1 = t1; s_h1 = h1; }
+        if (ok2) { s_t2 = t2; s_h2 = h2; }
     } else {
         s_temp_ok = 0;     /* 保持上次温度，速率置 0（不误报） */
         s_rate = 0;
@@ -155,6 +165,7 @@ static void alarm_eval_levels(void)
 
     lvl_smoke = classify(s_smoke, SMOKE_L1, SMOKE_L2, SMOKE_L3);
     lvl_flame = classify_flame(s_flame);
+    lvl_light = classify(s_light, 2500U, LIGHT_DARK, 4095U);   /* 光敏分类（待标定） */
     if (s_temp_ok) {
         lt = classify((u16)s_temp, (u16)TEMP_L1, (u16)TEMP_L2, (u16)TEMP_L3);
         lr = classify((u16)s_rate, (u16)RATE_L1, (u16)RATE_L2, (u16)RATE_L3);
@@ -220,14 +231,14 @@ static void alarm_dispatch_actuators(void)
 
     switch (cur_level) {
     case ALARM_NORMAL:
-        fan_set_speed(0);                out_fan_pct = 0;
-        pump_off();                      out_pump_on = 0;
+        if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(0); out_fan_pct = 0; }
+        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_off();      out_pump_on = 0; }
         beep_period = 0;
         /* ★扩展点：天黑白光常亮（光敏联动） */
         break;
     case ALARM_L1:
-        fan_set_speed(30);               out_fan_pct = 30;
-        pump_off();                      out_pump_on = 0;
+        if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(30); out_fan_pct = 30; }
+        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_off();      out_pump_on = 0; }
         beep_period = BEEP_L1_PERIOD;
         break;
     case ALARM_L2:
@@ -238,15 +249,15 @@ static void alarm_dispatch_actuators(void)
         break;
     case ALARM_L3:
         /* ★扩展点：风扇助燃防护（升温速率达二级且烟雾偏低→不启动） */
-        fan_set_speed(100);              out_fan_pct = 100;
-        pump_on();                       out_pump_on = 1;
+        if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(100); out_fan_pct = 100; }
+        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_on();        out_pump_on = 1; }
         /* 三级持续长鸣，drive_beep 处理 */
         /* ★扩展点：ledstrip 三级高频闪（本次用 mode 3 红闪） */
         break;
     }
 
     /* ledstrip：cur_level 值 0/1/2/3 正好对应 mode 0/1/2/3，仅在变化时下发 */
-    if (cur_level != last_disp_level) {
+    if (!(manual_mask & ALARM_MANUAL_LEDSTRIP) && cur_level != last_disp_level) {
         ledstrip_set_mode(LEDSTRIP_1, cur_level);
         ledstrip_set_mode(LEDSTRIP_2, cur_level);
         last_disp_level = cur_level;
@@ -308,6 +319,9 @@ void alarm_tick(void)
 
     /* 每 10ms：beep 断续驱动 */
     alarm_drive_beep();
+    if (mute_flag && mute_remain > 0) {
+        if (--mute_remain == 0) mute_flag = 0;
+    }
 
 #ifdef ALARM_DEBUG_LOG
     /* 每 1s 打印一次状态 */
@@ -335,6 +349,7 @@ void alarm_init(void)
     last_disp_level = 0xFF;
     dht_inited = 0;
     stable_cnt = 0;
+    manual_mask = 0;
 
     alarm_sample_adc();
     alarm_sample_dht();      /* 首次读，rate=0 */
@@ -346,7 +361,7 @@ void alarm_init(void)
 void alarm_enable(u8 on)    { enabled = on; }
 u8   alarm_is_enabled(void) { return enabled; }
 
-void alarm_mute(void)    { mute_flag = 1; }   /* ★扩展点：15s 倒计时后续实现 */
+void alarm_mute(void)    { mute_flag = 1; mute_remain = 1500; }   /* ★扩展点：15s 倒计时后续实现 */
 u8   alarm_is_muted(void){ return mute_flag; }
 
 /* ============================================================
@@ -365,3 +380,15 @@ u8  alarm_get_temp_level(void)  { return lvl_temp; }
 u8  alarm_get_flame_level(void) { return lvl_flame; }
 u8  alarm_get_fan_pct(void)     { return out_fan_pct; }
 u8  alarm_get_pump_on(void)     { return out_pump_on; }
+/* ====== 光敏等级 ====== */
+u8   alarm_get_light_level(void)    { return lvl_light; }
+
+/* ====== 执行器手动覆盖 ====== */
+void alarm_manual_override(u8 mask) { manual_mask |= mask; }
+void alarm_manual_release(u8 mask)  { manual_mask &= ~mask; }
+
+/* ====== 逐传感器原始值 getter（view 显示用） ====== */
+u8   alarm_get_temp_n(u8 n)  { return (n == 1) ? s_t1 : s_t2; }
+u8   alarm_get_humi_n(u8 n)  { return (n == 1) ? s_h1 : s_h2; }
+u16  alarm_get_flame_n(u8 n) { return (n == 1) ? s_f1 : s_f2; }
+

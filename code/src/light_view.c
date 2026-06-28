@@ -1,5 +1,5 @@
 #include "light_view.h"
-#include "light.h"     /* light_read_ao / light_read_alarm */
+#include "alarm.h"
 #include "lcd.h"       /* LCD_Fill / LCD_ShowChinese / LCD_ShowString + BLACK/WHITE/RED/GREEN */
 #include "joystick.h"  /* JOY_DOWN */
 #include <stdio.h>     /* sprintf */
@@ -57,8 +57,8 @@ void light_view_tick(void)
     if (++lt_tick < LIGHT_REFRESH_TICKS) return;   /* 约 0.5s 刷新一次 */
     lt_tick = 0;
 
-    lt_ao    = light_read_ao();
-    lt_alarm = light_read_alarm();
+    lt_ao    = alarm_get_light();
+    lt_alarm = (alarm_get_light_level() >= 1) ? 1 : 0;
     lt_draw_ao(lt_ao);
     lt_draw_do(lt_alarm);
 }

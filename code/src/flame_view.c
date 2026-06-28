@@ -1,5 +1,6 @@
 #include "flame_view.h"
-#include "flame.h"     /* flame_read_ao / flame_read_alarm / FLAME_SENSOR_1/2 */
+#include "flame.h"
+#include "alarm.h"
 #include "lcd.h"       /* LCD_Fill / LCD_ShowChinese / LCD_ShowString + BLACK/WHITE/RED/GREEN */
 #include "joystick.h"  /* JOY_DOWN */
 #include <stdio.h>     /* sprintf */
@@ -64,14 +65,11 @@ void flame_view_enter(void)
 
 void flame_view_tick(void)
 {
-    u8 s;
     if (++fm_tick < FLAME_REFRESH_TICKS) return;
     fm_tick = 0;
 
-    for (s = 0; s < 2; s++) {
-        fm_ao[s]    = flame_read_ao(s);
-        fm_alarm[s] = flame_read_alarm(s);
-    }
+    fm_ao[0] = alarm_get_flame_n(1);
+    fm_ao[1] = alarm_get_flame_n(2);
     fm_draw_ao(FLAME_SENSOR_1, FM_Y_AO1);
     fm_draw_do(FLAME_SENSOR_1, FM_Y_DO1);
     fm_draw_ao(FLAME_SENSOR_2, FM_Y_AO2);

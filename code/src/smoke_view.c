@@ -1,5 +1,5 @@
 #include "smoke_view.h"
-#include "smoke.h"     /* smoke_read_ao / smoke_read_alarm */
+#include "alarm.h"
 #include "lcd.h"       /* LCD_Fill / LCD_ShowChinese / LCD_ShowString + BLACK/WHITE/RED/GREEN */
 #include "joystick.h"  /* JOY_DOWN */
 #include <stdio.h>     /* sprintf */
@@ -57,8 +57,8 @@ void smoke_view_tick(void)
     if (++sm_tick < SMOKE_REFRESH_TICKS) return;   /* 约 0.5s 刷新一次 */
     sm_tick = 0;
 
-    sm_ao    = smoke_read_ao();
-    sm_alarm = smoke_read_alarm();
+    sm_ao    = alarm_get_smoke();
+    sm_alarm = (alarm_get_smoke_level() >= 1) ? 1 : 0;
     sm_draw_ao(sm_ao);
     sm_draw_do(sm_alarm);
 }

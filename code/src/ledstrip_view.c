@@ -1,4 +1,5 @@
 #include "ledstrip_view.h"
+#include "alarm.h"
 #include "ledstrip.h"
 #include "lcd.h"
 #include "joystick.h"
@@ -60,6 +61,7 @@ void ledstrip_view_enter(void)
     LCD_ShowString(0, LS_Y_HINT1, (u8 *)"L/R:MODE", WHITE, BLACK, 16, 0);
     LCD_ShowString(0, LS_Y_HINT2, (u8 *)"SW:SEL", WHITE, BLACK, 16, 0);
     LCD_ShowString(0, LS_Y_HINT3, (u8 *)"DN:BACK", WHITE, BLACK, 16, 0);
+    alarm_manual_override(ALARM_MANUAL_LEDSTRIP);
 }
 
 void ledstrip_view_tick(void)
@@ -71,7 +73,7 @@ u8 ledstrip_view_on_event(u8 ev, u8 sw)
 {
     u8 mode;
 
-    if (ev == JOY_DOWN) return 1;
+    if (ev == JOY_DOWN) { alarm_manual_release(ALARM_MANUAL_LEDSTRIP); return 1; }
 
     /* SW: switch selected strip */
     if (sw) {

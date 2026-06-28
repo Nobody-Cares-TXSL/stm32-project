@@ -1,4 +1,5 @@
 #include "pump_view.h"
+#include "alarm.h"
 #include "pump.h"      /* pump_on / pump_off / pump_is_on */
 #include "lcd.h"       /* LCD_Fill / LCD_ShowChinese / LCD_ShowString + BLACK/WHITE/RED/GREEN */
 #include "joystick.h"  /* JOY_DOWN */
@@ -27,6 +28,7 @@ void pump_view_enter(void)
     pu_draw_state();
     LCD_ShowString(0, PU_Y_HINT1, (u8 *)"SW:ON/OFF", WHITE, BLACK, 16, 0);
     LCD_ShowString(0, PU_Y_HINT2, (u8 *)"DN:BACK", WHITE, BLACK, 16, 0);
+    alarm_manual_override(ALARM_MANUAL_PUMP);
 }
 
 void pump_view_tick(void)
@@ -36,7 +38,7 @@ void pump_view_tick(void)
 
 u8 pump_view_on_event(u8 ev, u8 sw)
 {
-    if (ev == JOY_DOWN) return 1;     /* 下拨 -> 返回主菜单 */
+    if (ev == JOY_DOWN) { alarm_manual_release(ALARM_MANUAL_PUMP); return 1; }     /* 下面 -> 返回上级菜单 */
 
     if (sw) {
         if (pump_is_on()) pump_off();

@@ -1,14 +1,12 @@
 #include "th_view.h"
-#include "dht.h"
+#include "alarm.h"
 #include "lcd.h"        /* LCD_Fill / LCD_ShowChinese / LCD_ShowString + BLACK/WHITE */
 #include "joystick.h"   /* JOY_DOWN */
 #include <stdio.h>      /* sprintf */
 #include <string.h>     /* strlen */
 
 /* ====== 两颗传感器引脚（换线/增减传感器只改这里） ====== */
-#define TH_PORT1  GPIOB
 #define TH_PIN1   GPIO_Pin_14   /* 传感器1：短线 */
-#define TH_PORT2  GPIOB
 #define TH_PIN2   GPIO_Pin_15   /* 传感器2：长线 */
 
 /* ====== 刷新节流：主循环约10ms，100次≈1秒（DHT11 采样间隔下限） ====== */
@@ -73,15 +71,14 @@ void th_view_enter(void)
 
 void th_view_tick(void)
 {
-    u8 t, h;
 
     if (++th_tick < TH_REFRESH_TICKS) return;   /* 节流：约1秒读一次 */
     th_tick = 0;
 
-    if (dht_read(TH_PORT1, TH_PIN1, &t, &h)) { th_t1 = t; th_h1 = h; th_ok1 = 1; }
-    else th_ok1 = 0;
-    if (dht_read(TH_PORT2, TH_PIN2, &t, &h)) { th_t2 = t; th_h2 = h; th_ok2 = 1; }
-    else th_ok2 = 0;
+    th_ok1 = alarm_get_temp_ok();
+    th_ok2 = th_ok1;
+    th_t1 = alarm_get_temp_n(1);  th_h1 = alarm_get_humi_n(1);
+    th_t2 = alarm_get_temp_n(2);  th_h2 = alarm_get_humi_n(2);
 
     th_draw_value(TH_Y_VALUE1, th_t1, th_h1, th_ok1);
     th_draw_value(TH_Y_VALUE2, th_t2, th_h2, th_ok2);
