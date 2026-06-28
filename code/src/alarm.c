@@ -85,8 +85,8 @@ static u8  beep_cur_on     = 0;
 /* ====== 开关 / 消音 ====== */
 static u8 enabled   = 1;
 static u8 mute_flag = 0;        /* 预留 */
-静音剩余 tick（10ms 单位）
-手动覆盖位掩码
+static u16 mute_remain = 0;    /* 静音剩余 tick（10ms 单位） */
+static u8  manual_mask = 0;    /* 手动覆盖位掩码 */
 
 static u8  s_t1 = 0, s_h1 = 0, s_t2 = 0, s_h2 = 0;
 static u16 s_f1 = 0, s_f2 = 0;
@@ -242,9 +242,9 @@ static void alarm_dispatch_actuators(void)
         beep_period = BEEP_L1_PERIOD;
         break;
     case ALARM_L2:
-        fan_set_speed(60);               out_fan_pct = 60;
+        if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(60); out_fan_pct = 60; }
         /* ★扩展点：pump 待机预加压（本次 off） */
-        pump_off();                      out_pump_on = 0;
+        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_off();      out_pump_on = 0; }
         beep_period = BEEP_L2_PERIOD;
         break;
     case ALARM_L3:
