@@ -80,10 +80,10 @@ static void ws_reset(volatile GPIO_TypeDef *port, u32 low)
 static void mode_color(u8 mode, u8 *r, u8 *g, u8 *b)
 {
     switch (mode) {
-        case 0: *r=0xFF; *g=0xFF; *b=0xFF; break;  /* L0: white */
-        case 1: *r=0x00; *g=0x00; *b=0xFF; break;  /* L1: blue */
-        case 2: *r=0xFF; *g=0xFF; *b=0x00; break;  /* L2: yellow */
-        case 3: *r=0xFF; *g=0x00; *b=0x00; break;  /* L3: red */
+        case 0: *r=0x3F; *g=0x3F; *b=0x3F; break;  /* L0: white (25% brightness, USB power limit) */
+        case 1: *r=0x00; *g=0x00; *b=0x3F; break;  /* L1: blue (25%) */
+        case 2: *r=0x3F; *g=0x3F; *b=0x00; break;  /* L2: yellow (25%) */
+        case 3: *r=0x3F; *g=0x00; *b=0x00; break;  /* L3: red (25%) */
         default: *r=0; *g=0; *b=0; break;
     }
 }
