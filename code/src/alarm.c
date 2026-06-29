@@ -93,9 +93,9 @@ static u8  s_t1 = 0, s_h1 = 0, s_t2 = 0, s_h2 = 0;
 static u8  s_ok1 = 0, s_ok2 = 0;   /* 按路读取成功状态 */
 static u16 s_f1 = 0, s_f2 = 0;
 
-#define LIGHT_L1      1900U     /* inverted > 此值：斜 24%（需标定；最簇 inverted↓2211，最暗↓1801） */
-#define LIGHT_L2      2000U     /* inverted > 此值：斜 48% */
-#define LIGHT_L3      2100U     /* inverted > 此值：斜 73% */
+#define LIGHT_L1      3200U     /* inverted > 此值：斜 80%（需标定；inverted 范围 95-3945） */
+#define LIGHT_L2      3600U     /* inverted > 此值：斜 90% */
+#define LIGHT_L3      3800U     /* inverted > 此值：斜 96% */
 
 /* ============================================================
  * 单项阈值判定

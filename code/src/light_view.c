@@ -19,8 +19,8 @@ static u16 lt_ao    = 0;    /* AO 原始值 0-4095 */
 static u8  lt_alarm = 0;    /* DO 触发：1/0 */
 static u16 lt_tick  = 0;    /* 刷新计数器 */
 
-#define LT_ADC_MAX   2300U    /* 全暗 ADC 间值（暗↓高数值） */
-#define LT_ADC_MIN   1900U    /* 全亮 ADC 间值（亮↓低数值）（需标定） */
+#define LT_ADC_MAX   4000U    /* 全暗 ADC 间值（暗↓高数值）（需标定） */
+#define LT_ADC_MIN    150U    /* 全亮 ADC 间值（亮↓低数值）（需标定） */
 
 /* AO 行：清行 -> "光敏" -> ":XX%" */
 static void lt_draw_ao(u16 adc)
