@@ -9,6 +9,11 @@
 #include "pump_view.h"   /* pump module */
 #include "ledstrip_view.h" /* ledstrip module */
 #include "beep_view.h"   /* beep module */
+#include "alarm.h"       /* alarm_enable */
+#include "fan.h"         /* fan_set_speed */
+#include "pump.h"        /* pump_off */
+#include "beep.h"        /* beep_off */
+#include "ledstrip.h"    /* ledstrip_set_mode */
 #include <string.h>     /* memset */
 #include <stdio.h>      /* sprintf */
 
@@ -34,6 +39,7 @@ static const menu_item_t menu_items[] = {
 static u8 menu_cursor    = 0;            /* 当前光标行 */
 static u8 menu_confirmed = MENU_COUNT;   /* 已确认行；MENU_COUNT 表示无确认 */
 static const menu_item_t *active_view = NULL;   /* 活动视图；NULL=主菜单态 */
+static u8 sys_on = 0;                         /* 系统总开关：0=关闭，1=启动 */
 
 /* 画一行文字：自动区分 ASCII(半角8px) 与 GB2312 汉字(全角16px)；mode=1 叠加不填背景 */
 static void menu_show_line(u16 x, u16 y, const u8 *s, u16 fc, u16 bc)
@@ -57,6 +63,8 @@ static void menu_draw(void)
 {
     u8 i;
     LCD_Fill(0, 0, 128, 128, BLACK);
+    if (sys_on) LCD_ShowChinese(96, 0, (u8 *)"开", GREEN, BLACK, 16, 0);
+    else        LCD_ShowChinese(96, 0, (u8 *)"关", RED,   BLACK, 16, 0);
     for (i = 0; i < MENU_COUNT; i++) {
         char line[32];
         memset(line, 0, sizeof(line));
@@ -99,6 +107,23 @@ void menu_handle(u8 ev, u8 sw)
         dirty = 1;
     } else if (ev == JOY_DOWN) {
         menu_cursor = (menu_cursor + 1) % MENU_COUNT;
+        dirty = 1;
+    }
+
+    } else if (ev == JOY_LEFT) {
+        /* 系统启动 */
+        sys_on = 1;
+        alarm_enable(1);
+        dirty = 1;
+    } else if (ev == JOY_RIGHT) {
+        /* 系统关闭：停报警 + 关全部执行器 */
+        sys_on = 0;
+        alarm_enable(0);
+        fan_set_speed(0);
+        pump_off();
+        beep_off();
+        ledstrip_set_mode(0, 0);
+        ledstrip_set_mode(1, 0);
         dirty = 1;
     }
 
