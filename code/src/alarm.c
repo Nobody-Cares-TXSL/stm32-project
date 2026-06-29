@@ -155,6 +155,7 @@ static void alarm_sample_dht(void)
         if (ok1) { s_t1 = t1; s_h1 = h1; }
         if (ok2) { s_t2 = t2; s_h2 = h2; }
         s_ok1 = ok1; s_ok2 = ok2;
+        printf("[DHT] ok1=%d ok2=%d T=%d/%d H=%d/%d\r\n", ok1, ok2, t1, t2, h1, h2);
     } else {
         s_temp_ok = 0;     /* 保持上次温度，速率置 0（不误报） */
         s_rate = 0;

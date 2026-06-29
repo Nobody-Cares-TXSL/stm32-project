@@ -19,11 +19,15 @@ static u16 lt_ao    = 0;    /* AO 原始值 0-4095 */
 static u8  lt_alarm = 0;    /* DO 触发：1/0 */
 static u16 lt_tick  = 0;    /* 刷新计数器 */
 
+#define LT_ADC_MAX   2300U    /* 全暗 ADC 间值（暗↓高数值） */
+#define LT_ADC_MIN   1900U    /* 全亮 ADC 间值（亮↓低数值）（需标定） */
+
 /* AO 行：清行 -> "光敏" -> ":XX%" */
 static void lt_draw_ao(u16 adc)
 {
     char buf[8];
-    u8 pct = (u8)((u32)(4095 - adc) * 100 / 4096);
+    s32 val = (s32)(LT_ADC_MAX - adc) * 100 / (s32)(LT_ADC_MAX - LT_ADC_MIN);
+    u8 pct = (val < 0) ? 0 : (val > 100) ? 100 : (u8)val;
     LCD_Fill(0, LT_Y_AO, 128, LT_Y_AO + 16, BLACK);
     LCD_ShowChinese(0, LT_Y_AO, (u8 *)"光敏", WHITE, BLACK, 16, 0);   /* 2 字 = 32px */
     sprintf(buf, ":%d%%", pct);
