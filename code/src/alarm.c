@@ -208,7 +208,7 @@ static void alarm_eval_levels(void)
         target_level = ALARM_L3;
     }
     /* (烟+温同时 >= 二级) 或 任一传感器三级 */
-    else if ((lvl_smoke >= 2 && lvl_temp >= 2) || any_l3) {
+    else if ((lvl_smoke >= 2 && lvl_temp >= 2) || any_l3 || any_l2) {
         target_level = ALARM_L2;
     }
     /* 任一传感器一级 且 无二级及以上 */
@@ -239,6 +239,17 @@ static void alarm_apply_stable(void)
         level_ticks = 0;
         return;
     }
+
+    /* 升降级：自动升级过头后逐级回落 */
+    if (cur_level > target_level && target_level > ALARM_NORMAL) {
+        level_ticks++;
+        if (level_ticks >= ALARM_UPGRADE_TICKS) {
+            cur_level--;
+            level_ticks = 0;
+        }
+        return;
+    }
+
     /* 一二级：连续 N 次稳定才升 */
     if (target_level == ALARM_L1 || target_level == ALARM_L2) {
         stable_cnt++;
