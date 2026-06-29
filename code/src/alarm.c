@@ -15,10 +15,10 @@
  * 例外：火焰 AO 反向（KY-026 有火时拉低），见 classify_flame
  * ============================================================ */
 #define ALARM_DEBUG_LOG  /* 调试开关：每秒串口打印 alarm 状态；正式固件注释掉此行 */
-#define SMOKE_L1      200U
-#define SMOKE_L2      800U
-#define SMOKE_L3      2000U
-#define SMOKE_SEVERE  2500U      /* 严重超标速判 */
+#define SMOKE_L1      1500U   /* 烟雾反向：AO >= 此值 = 正常 */
+#define SMOKE_L2      800U    /* AO < 此值 = 二级 */
+#define SMOKE_L3      400U    /* AO < 此值 = 三级 */
+#define SMOKE_SEVERE  200U    /* 严重超标：AO < 此值 */
 
 #define TEMP_L1       30
 #define TEMP_L2       40
@@ -119,6 +119,15 @@ static u8 classify_flame(u16 v)
     if (v < FLAME_L1) return 1;
     return 0;
 }
+/* 烟雾反向：AO 越小烟雾越浓，MQ-2 模块实测基线 1600~4000 */
+static u8 classify_smoke(u16 v)
+{
+    if (v < SMOKE_L3) return 3;
+    if (v < SMOKE_L2) return 2;
+    if (v < SMOKE_L1) return 1;
+    return 0;
+}
+
 
 /* ============================================================
  * 采集
@@ -133,12 +142,18 @@ static void alarm_sample_adc(void)
     s_light = light_read_ao();
 }
 
+/**
+ * @brief 采集DHT温湿度传感器数据并更新状态
+ * 该函数从两个DHT传感器读取温度和湿度，计算最高温度、湿度值和温度变化率
+ * 并更新全局状态变量
+ */
 static void alarm_sample_dht(void)
 {
-    u8 t1 = 0, h1 = 0, t2 = 0, h2 = 0;
-    u8 ok1, ok2;
+    u8 t1 = 0, h1 = 0, t2 = 0, h2 = 0;    // 两个传感器的温度和湿度数据
+    u8 ok1, ok2;                          // 两个传感器读取状态标志
     u8 new_temp = 0;
 
+    // 读取两个传感器的温湿度数据
     ok1 = dht_read(DHT_PORT1, DHT_PIN1, &t1, &h1);
     ok2 = dht_read(DHT_PORT2, DHT_PIN2, &t2, &h2);
 
@@ -166,11 +181,18 @@ static void alarm_sample_dht(void)
 /* ============================================================
  * 等级判定：单项 → 跨模块规则 + 严重超标速判 → target_level
  * ============================================================ */
+/**
+ * @brief 评估报警等级
+ * @details 根据烟雾、温度、火焰和光照传感器的读数，综合判断当前报警等级
+ * @note 该函数会更新全局变量target_level的值
+ */
 static void alarm_eval_levels(void)
 {
-    u8 lt, lr, any_l3, any_l2, any_l1;
+    u8 lt, lr, any_l3, any_l2, any_l1;  // 定义局部变量，用于存储各类报警等级
 
-    lvl_smoke = classify(s_smoke, SMOKE_L1, SMOKE_L2, SMOKE_L3);
+    /* 对烟雾传感器进行等级分类 */
+    lvl_smoke = classify_smoke(s_smoke);
+    /* 对火焰传感器进行等级分类 */
     lvl_flame = classify_flame(s_flame);
     lvl_light = (s_light <= 800U) ? 1 : 0;   /* 光敏二元: ≤800=异常 */
     if (s_temp_ok) {
@@ -182,7 +204,7 @@ static void alarm_eval_levels(void)
     }
 
     /* 严重超标速判（瞬时三级，无延时） */
-    if (s_smoke > SMOKE_SEVERE && s_temp_ok && s_temp > TEMP_SEVERE) {
+    if (s_smoke < SMOKE_SEVERE && s_temp_ok && s_temp > TEMP_SEVERE) {
         target_level = ALARM_L3;
         return;
     }
