@@ -36,10 +36,10 @@ static u16 ls_blink_cnt[2] = {0, 0};
  * Each __NOP() = 1 cycle = 13.89ns
  * BSRR write = ~1 cycle
  *
- * 0-bit: HIGH ~30cyc(417ns) + LOW ~55cyc(764ns) = ~1181ns
+ * 0-bit: HIGH ~35cyc(486ns) + LOW ~55cyc(764ns) = ~1250ns
  * 1-bit: HIGH ~55cyc(764ns) + LOW ~25cyc(347ns) = ~1111ns
  * Loop overhead ~5cyc absorbed into LOW period
- * Threshold ~500ns => 0-bit 417ns < 500ns, 1-bit 764ns > 500ns
+ * Threshold ~500ns => 0-bit 486ns < 500ns, 1-bit 764ns > 500ns
  */
 
 /* send one byte MSB first -- bit-banging inlined */
@@ -56,9 +56,10 @@ static void ws_send_byte(volatile GPIO_TypeDef *port, u32 high, u32 low, u8 byte
             NOP10; NOP10;
             __NOP(); __NOP(); __NOP(); __NOP(); __NOP();  /* 25 */
         } else {
-            /* 0-bit: HIGH=30 nops, LOW=55 nops */
+            /* 0-bit: HIGH=35 nops, LOW=55 nops */
             port->BSRR = high;
-            NOP10; NOP10; NOP10;                        /* 30 */
+            NOP10; NOP10; NOP10;
+            __NOP(); __NOP(); __NOP(); __NOP(); __NOP();  /* 35 */
             port->BSRR = low;
             NOP10; NOP10; NOP10; NOP10; NOP10;
             __NOP(); __NOP(); __NOP(); __NOP(); __NOP();  /* 55 */
@@ -80,17 +81,17 @@ static void ws_reset(volatile GPIO_TypeDef *port, u32 low)
 {
     u16 i;
     port->BSRR = low;
-    for (i = 0; i < 400; i++) __NOP();   /* 400 nops ~5.6us * 9 = ~50us */
+    for (i = 0; i < 3600; i++) __NOP();   /* 3600+ nops * 13.89ns > 50us reset */
 }
 
 /* get RGB for mode */
 static void mode_color(u8 mode, u8 *r, u8 *g, u8 *b)
 {
     switch (mode) {
-        case 0: *r=0x3F; *g=0x3F; *b=0x3F; break;  /* L0: white (25% brightness, USB power limit) */
-        case 1: *r=0x00; *g=0x00; *b=0x3F; break;  /* L1: blue (25%) */
-        case 2: *r=0x3F; *g=0x3F; *b=0x00; break;  /* L2: yellow (25%) */
-        case 3: *r=0x3F; *g=0x00; *b=0x00; break;  /* L3: red (25%) */
+        case 0: *r=0x7F; *g=0x7F; *b=0x7F; break;  /* L0: white (50%) */
+        case 1: *r=0x00; *g=0x7F; *b=0x00; break;  /* L1: green (50%) */
+        case 2: *r=0x00; *g=0x00; *b=0x7F; break;  /* L2: blue (50%) */
+        case 3: *r=0x7F; *g=0x00; *b=0x00; break;  /* L3: red (50%) */
         default: *r=0; *g=0; *b=0; break;
     }
 }

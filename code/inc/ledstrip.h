@@ -5,7 +5,7 @@
 /* WS2812B LED strip driver
  * strip 1: PC12(DIN), 7 LEDs
  * strip 2: PC11(DIN), 9 LEDs
- * mode: 0=white, 1=blue blink, 2=yellow blink, 3=red fast blink
+ * mode: 0=white, 1=green blink, 2=blue blink, 3=red fast blink
  */
 
 #define LEDSTRIP_1      0
