@@ -15,10 +15,10 @@
  * 例外：火焰 AO 反向（KY-026 有火时拉低），见 classify_flame
  * ============================================================ */
 #define ALARM_DEBUG_LOG  /* 调试开关：每秒串口打印 alarm 状态；正式固件注释掉此行 */
-#define SMOKE_L1      1500U   /* 烟雾反向：AO >= 此值 = 正常 */
-#define SMOKE_L2      800U    /* AO < 此值 = 二级 */
-#define SMOKE_L3      400U    /* AO < 此值 = 三级 */
-#define SMOKE_SEVERE  200U    /* 严重超标：AO < 此值 */
+#define SMOKE_L1      1700U   /* ≥1700=一级 */
+#define SMOKE_L2      2500U   /* ≥2500=二级 */
+#define SMOKE_L3      3000U   /* >3000=三级 */
+#define SMOKE_SEVERE  3500U   /* >3500 + 温度>55 → 瞬时三级 */
 
 #define TEMP_L1       30
 #define TEMP_L2       40
@@ -119,16 +119,6 @@ static u8 classify_flame(u16 v)
     if (v < FLAME_L1) return 1;
     return 0;
 }
-/* 烟雾反向：AO 越小烟雾越浓，MQ-2 模块实测基线 1600~4000 */
-static u8 classify_smoke(u16 v)
-{
-    if (v < SMOKE_L3) return 3;
-    if (v < SMOKE_L2) return 2;
-    if (v < SMOKE_L1) return 1;
-    return 0;
-}
-
-
 /* ============================================================
  * 采集
  * ============================================================ */
@@ -191,7 +181,7 @@ static void alarm_eval_levels(void)
     u8 lt, lr, any_l3, any_l2, any_l1;  // 定义局部变量，用于存储各类报警等级
 
     /* 对烟雾传感器进行等级分类 */
-    lvl_smoke = classify_smoke(s_smoke);
+    lvl_smoke = classify(s_smoke, SMOKE_L1, SMOKE_L2, SMOKE_L3);
     /* 对火焰传感器进行等级分类 */
     lvl_flame = classify_flame(s_flame);
     lvl_light = (s_light <= 800U) ? 1 : 0;   /* 光敏二元: ≤800=异常 */
@@ -204,7 +194,7 @@ static void alarm_eval_levels(void)
     }
 
     /* 严重超标速判（瞬时三级，无延时） */
-    if (s_smoke < SMOKE_SEVERE && s_temp_ok && s_temp > TEMP_SEVERE) {
+    if (s_smoke > SMOKE_SEVERE && s_temp_ok && s_temp > TEMP_SEVERE) {
         target_level = ALARM_L3;
         return;
     }
