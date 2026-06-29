@@ -41,8 +41,8 @@
 #define ALARM_TICK_DHT      200     /* DHT 读取节流：2s */
 #define ALARM_STABLE_N      3       /* 防误报：连续 3 次(300ms)稳定达标 */
 
-#define BEEP_L1_PERIOD      500     /* 一级断续周期 ms（on 250/off 250） */
-#define BEEP_L2_PERIOD      100     /* 二级断续周期 ms */
+#define BEEP_L1_PERIOD      5000    /* 一级断续周期 ms（5s间隔） */
+#define BEEP_L2_PERIOD      1000    /* 二级断续周期 ms（1s间隔） */
 /* 三级持续长鸣，无 toggle */
 
 /* DHT 两路引脚（与 th_view 一致） */
@@ -93,9 +93,7 @@ static u8  s_t1 = 0, s_h1 = 0, s_t2 = 0, s_h2 = 0;
 static u8  s_ok1 = 0, s_ok2 = 0;   /* 按路读取成功状态 */
 static u16 s_f1 = 0, s_f2 = 0;
 
-#define LIGHT_L1      3200U     /* inverted > 此值：斜 80%（需标定；inverted 范围 95-3945） */
-#define LIGHT_L2      3200U
-#define LIGHT_L3      3200U
+/* 光敏改为二元判定 (s_light<=800=异常)，三级阈值宏已删除 */
 
 /* ============================================================
  * 单项阈值判定
@@ -171,7 +169,7 @@ static void alarm_eval_levels(void)
 
     lvl_smoke = classify(s_smoke, SMOKE_L1, SMOKE_L2, SMOKE_L3);
     lvl_flame = classify_flame(s_flame);
-    lvl_light = classify((u16)(4095 - s_light), LIGHT_L1, LIGHT_L2, LIGHT_L3);   /* inverted: 亮↓高值↓报警 */
+    lvl_light = (s_light <= 800U) ? 1 : 0;   /* 光敏二元: ≤800=异常 */
     if (s_temp_ok) {
         lt = classify((u16)s_temp, (u16)TEMP_L1, (u16)TEMP_L2, (u16)TEMP_L3);
         lr = classify((u16)s_rate, (u16)RATE_L1, (u16)RATE_L2, (u16)RATE_L3);
@@ -249,8 +247,8 @@ static void alarm_dispatch_actuators(void)
         break;
     case ALARM_L2:
         if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(60); out_fan_pct = 60; }
-        /* ★扩展点：pump 待机预加压（本次 off） */
-        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_off();      out_pump_on = 0; }
+        /* ★扩展点：pump 二级预加压 */
+        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_on();       out_pump_on = 1; }
         beep_period = BEEP_L2_PERIOD;
         break;
     case ALARM_L3:
@@ -262,11 +260,18 @@ static void alarm_dispatch_actuators(void)
         break;
     }
 
-    /* ledstrip：cur_level 值 0/1/2/3 正好对应 mode 0/1/2/3，仅在变化时下发 */
-    if (!(manual_mask & ALARM_MANUAL_LEDSTRIP) && cur_level != last_disp_level) {
-        ledstrip_set_mode(LEDSTRIP_1, cur_level);
-        ledstrip_set_mode(LEDSTRIP_2, cur_level);
-        last_disp_level = cur_level;
+    /* ledstrip：cur_level 值 0/1/2/3 对应 mode，消音时关闭 */
+    if (!(manual_mask & ALARM_MANUAL_LEDSTRIP)) {
+        if (mute_flag) {
+            if (last_disp_level != 0xFF) {
+                ledstrip_all_off();
+                last_disp_level = 0xFF;
+            }
+        } else if (cur_level != last_disp_level) {
+            ledstrip_set_mode(LEDSTRIP_1, cur_level);
+            ledstrip_set_mode(LEDSTRIP_2, cur_level);
+            last_disp_level = cur_level;
+        }
     }
 }
 
@@ -278,7 +283,7 @@ static void alarm_drive_beep(void)
     if (!enabled) return;     /* 调试模式：不接管 beep */
 
     /* ★扩展点：消音期间（mute_flag 且非三级）静音 */
-    if (mute_flag && cur_level < ALARM_L3) {
+    if (mute_flag) {                    /* 消音时蜂鸣器全关（含 L3） */
         if (beep_cur_on) { beep_off(); beep_cur_on = 0; }
         return;
     }

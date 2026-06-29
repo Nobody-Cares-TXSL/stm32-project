@@ -23,7 +23,8 @@
               __NOP();__NOP();__NOP();__NOP();__NOP()
 
 /* ====== blink config ====== */
-#define LS_BLINK_TICKS  50   /* ~500ms at 10ms/tick */
+#define LS_BLINK_TICKS  50   /* ~500ms toggle for L1/L2 */
+#define LS_BLINK_FAST   10   /* ~100ms toggle for L3 */
 
 /* ====== mode state per strip ====== */
 static u8  ls_mode[2]      = {0, 0};
@@ -79,10 +80,11 @@ static void ws_reset(volatile GPIO_TypeDef *port, u32 low)
 static void mode_color(u8 mode, u8 *r, u8 *g, u8 *b)
 {
     switch (mode) {
-        case 1: *r=0xFF; *g=0xFF; *b=0x00; break;  /* yellow */
-        case 2: *r=0xFF; *g=0x80; *b=0x00; break;  /* orange */
-        case 3: *r=0xFF; *g=0x00; *b=0x00; break;  /* red */
-        default: *r=0; *g=0; *b=0; break;           /* off */
+        case 0: *r=0xFF; *g=0xFF; *b=0xFF; break;  /* L0: white */
+        case 1: *r=0x00; *g=0x00; *b=0xFF; break;  /* L1: blue */
+        case 2: *r=0xFF; *g=0xFF; *b=0x00; break;  /* L2: yellow */
+        case 3: *r=0xFF; *g=0x00; *b=0x00; break;  /* L3: red */
+        default: *r=0; *g=0; *b=0; break;
     }
 }
 
@@ -95,7 +97,7 @@ static void ledstrip_send(u8 strip)
     u32 low  = pin << 16;
     u8 max = (strip == LEDSTRIP_1) ? LS1_MAX : LS2_MAX;
     u8 r, g, b, i;
-    u8 on = ls_blink_on[strip] && (ls_mode[strip] != 0);
+    u8 on = ls_blink_on[strip];  /* mode 0 用 blink_on 控制开关 */
 
     __disable_irq();
     for (i = 0; i < max; i++) {
@@ -138,12 +140,26 @@ void ledstrip_tick(void)
 {
     u8 s;
     for (s = 0; s < 2; s++) {
-        if (ls_mode[s] == 0) continue;
+        if (ls_mode[s] == 0) continue;           /* white: 常亮，不闪 */
         ls_blink_cnt[s]++;
-        if (ls_blink_cnt[s] >= LS_BLINK_TICKS) {
+        u16 thr = (ls_mode[s] == 3) ? LS_BLINK_FAST : LS_BLINK_TICKS;
+        if (ls_blink_cnt[s] >= thr) {
             ls_blink_cnt[s] = 0;
             ls_blink_on[s] = !ls_blink_on[s];
             ledstrip_send(s);
         }
     }
+}
+void ledstrip_off(u8 strip)
+{
+    if (strip > LEDSTRIP_2) return;
+    ls_mode[strip] = 0;
+    ls_blink_on[strip] = 0;
+    ledstrip_send(strip);
+}
+
+void ledstrip_all_off(void)
+{
+    ledstrip_off(LEDSTRIP_1);
+    ledstrip_off(LEDSTRIP_2);
 }

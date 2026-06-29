@@ -13,7 +13,7 @@
 #include "fan.h"         /* fan_set_speed */
 #include "pump.h"        /* pump_off */
 #include "beep.h"        /* beep_off */
-#include "ledstrip.h"    /* ledstrip_set_mode */
+#include "ledstrip.h"    /* ledstrip_all_off */
 #include <string.h>     /* memset */
 #include <stdio.h>      /* sprintf */
 
@@ -108,12 +108,12 @@ void menu_handle(u8 ev, u8 sw)
     } else if (ev == JOY_DOWN) {
         menu_cursor = (menu_cursor + 1) % MENU_COUNT;
         dirty = 1;
-    }
-
     } else if (ev == JOY_LEFT) {
         /* 系统启动 */
         sys_on = 1;
         alarm_enable(1);
+        ledstrip_set_mode(0, 0);   /* 恢复白光 */
+        ledstrip_set_mode(1, 0);
         dirty = 1;
     } else if (ev == JOY_RIGHT) {
         /* 系统关闭：停报警 + 关全部执行器 */
@@ -122,8 +122,7 @@ void menu_handle(u8 ev, u8 sw)
         fan_set_speed(0);
         pump_off();
         beep_off();
-        ledstrip_set_mode(0, 0);
-        ledstrip_set_mode(1, 0);
+        ledstrip_all_off();
         dirty = 1;
     }
 
