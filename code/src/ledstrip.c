@@ -31,31 +31,38 @@ static u8  ls_mode[2]      = {0, 0};
 static u8  ls_blink_on[2]  = {0, 0};
 static u16 ls_blink_cnt[2] = {0, 0};
 
-/* send one bit - inline NOPs for deterministic timing */
-static void ws_send_bit(volatile GPIO_TypeDef *port, u32 high, u32 low, u8 bit)
-{
-    if (bit) {
-        port->BSRR = high;
-        NOP10; NOP10; NOP10; NOP10; NOP10;   /* 50 nops */
-        port->BSRR = low;
-        NOP10; NOP10; NOP10;
-        __NOP(); __NOP();                     /* 32 nops total */
-    } else {
-        port->BSRR = high;
-        NOP10; NOP10;
-        __NOP(); __NOP(); __NOP(); __NOP(); __NOP();  /* 25 nops total */
-        port->BSRR = low;
-        NOP10; NOP10; NOP10; NOP10; NOP10;
-        NOP10;                                /* 60 nops total */
-    }
-}
+/*
+ * WS2812B timing @72MHz (inlined, no per-bit function call)
+ * Each __NOP() = 1 cycle = 13.89ns
+ * BSRR write = ~1 cycle
+ *
+ * 0-bit: HIGH ~30cyc(417ns) + LOW ~55cyc(764ns) = ~1181ns
+ * 1-bit: HIGH ~55cyc(764ns) + LOW ~25cyc(347ns) = ~1111ns
+ * Loop overhead ~5cyc absorbed into LOW period
+ * Threshold ~500ns => 0-bit 417ns < 500ns, 1-bit 764ns > 500ns
+ */
 
-/* send one byte MSB first */
+/* send one byte MSB first -- bit-banging inlined */
 static void ws_send_byte(volatile GPIO_TypeDef *port, u32 high, u32 low, u8 byte)
 {
     u8 i;
     for (i = 0; i < 8; i++) {
-        ws_send_bit(port, high, low, byte & 0x80);
+        if (byte & 0x80) {
+            /* 1-bit: HIGH=55 nops, LOW=25 nops */
+            port->BSRR = high;
+            NOP10; NOP10; NOP10; NOP10; NOP10;
+            __NOP(); __NOP(); __NOP(); __NOP(); __NOP();  /* 55 */
+            port->BSRR = low;
+            NOP10; NOP10;
+            __NOP(); __NOP(); __NOP(); __NOP(); __NOP();  /* 25 */
+        } else {
+            /* 0-bit: HIGH=30 nops, LOW=55 nops */
+            port->BSRR = high;
+            NOP10; NOP10; NOP10;                        /* 30 */
+            port->BSRR = low;
+            NOP10; NOP10; NOP10; NOP10; NOP10;
+            __NOP(); __NOP(); __NOP(); __NOP(); __NOP();  /* 55 */
+        }
         byte <<= 1;
     }
 }
