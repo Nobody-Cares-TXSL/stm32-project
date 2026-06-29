@@ -340,9 +340,9 @@ void alarm_tick(void)
         static u16 log_cnt = 0;
         if (++log_cnt >= 300) {   /* 300*10ms = 3s */
             log_cnt = 0;
-            printf("[ALARM] L%d | S:%d(%d) F1:%d(%d) F2:%d(%d) L:%d(%d) T1:%d/%d(%d) T2:%d/%d(%d) R:%d | fan:%d%% pump:%d beep:L%d led:L%d\r\n",
+            printf("L%d|S:%d^%d F1:%d^%d F2:%d^%d L:%d^%d T1:%d/%d!%d^%d T2:%d/%d!%d^%d R:%d|F:%d%% P:%d B:L%d D:L%d\r\n",
                    cur_level, s_smoke, lvl_smoke, s_f1, classify_flame(s_f1), s_f2, classify_flame(s_f2), s_light, lvl_light,
-                   s_t1, s_h1, s_ok1, s_t2, s_h2, s_ok2, s_rate, out_fan_pct, out_pump_on, (!enabled || mute_flag || cur_level == ALARM_NORMAL) ? 0 : cur_level, (mute_flag || last_disp_level == 0xFF) ? 0xFF : last_disp_level);
+                   s_t1, s_h1, s_ok1, lvl_temp, s_t2, s_h2, s_ok2, lvl_temp, s_rate, out_fan_pct, out_pump_on, (!enabled || mute_flag || cur_level == ALARM_NORMAL) ? 0 : cur_level, (mute_flag || last_disp_level == 0xFF) ? 0xFF : last_disp_level);
         }
     }
 #endif
