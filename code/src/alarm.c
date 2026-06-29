@@ -41,6 +41,7 @@
 #define ALARM_TICK_DHT      200     /* DHT 读取节流：2s */
 #define ALARM_STABLE_N      3       /* 防误报：连续 3 次(300ms)稳定达标 */
 
+#define ALARM_UPGRADE_TICKS 100     /* 升级/降级延时：10s(100*100ms) */
 #define BEEP_L1_PERIOD      5000    /* 一级断续周期 ms（5s间隔） */
 #define BEEP_L2_PERIOD      1000    /* 二级断续周期 ms（1s间隔） */
 /* 三级持续长鸣，无 toggle */
@@ -74,6 +75,8 @@ static u8 lvl_smoke = 0, lvl_temp = 0, lvl_flame = 0, lvl_light = 0;
 static u8 target_level = ALARM_NORMAL;
 static u8 cur_level    = ALARM_NORMAL;
 static u8 stable_cnt   = 0;     /* L1/L2 共用（target 互斥），L3/NORMAL 时清零 */
+static u16 level_ticks = 0;    /* 当前等级持续 tick 数，用于升级/降级 */
+static u8  prev_target = ALARM_NORMAL;  /* 上一次 target，切换时重置计时 */
 
 /* ====== 执行器下发 ====== */
 static u8  out_fan_pct     = 0;
@@ -103,8 +106,8 @@ static u16 s_f1 = 0, s_f2 = 0;
 static u8 classify(u16 v, u16 l1, u16 l2, u16 l3)
 {
     if (v > l3) return 3;
-    if (v > l2) return 2;
-    if (v > l1) return 1;
+    if (v >= l2) return 2;
+    if (v >= l1) return 1;
     return 0;
 }
 
@@ -165,7 +168,7 @@ static void alarm_sample_dht(void)
  * ============================================================ */
 static void alarm_eval_levels(void)
 {
-    u8 lt, lr;
+    u8 lt, lr, any_l3, any_l2, any_l1;
 
     lvl_smoke = classify(s_smoke, SMOKE_L1, SMOKE_L2, SMOKE_L3);
     lvl_flame = classify_flame(s_flame);
@@ -184,16 +187,20 @@ static void alarm_eval_levels(void)
         return;
     }
 
-    /* 三级：烟+温+火焰 三项同时达三级 */
-    if (lvl_smoke >= 3 && lvl_temp >= 3 && lvl_flame >= 3) {
+    any_l3 = (lvl_smoke >= 3 || lvl_temp >= 3 || lvl_flame >= 3);
+    any_l2 = (lvl_smoke >= 2 || lvl_temp >= 2 || lvl_flame >= 2);
+    any_l1 = (lvl_smoke >= 1 || lvl_temp >= 1 || lvl_flame >= 1);
+
+    /* 烟+温+火 三者同时 >= 二级 */
+    if (lvl_smoke >= 2 && lvl_temp >= 2 && lvl_flame >= 2) {
         target_level = ALARM_L3;
     }
-    /* 二级：烟+温同达二级 或 火焰达二级 */
-    else if ((lvl_smoke >= 2 && lvl_temp >= 2) || lvl_flame >= 2) {
+    /* (烟+温同时 >= 二级) 或 任一传感器三级 */
+    else if ((lvl_smoke >= 2 && lvl_temp >= 2) || any_l3) {
         target_level = ALARM_L2;
     }
-    /* 一级：烟达一级 且 火焰未达二级 */
-    else if (lvl_smoke >= 1 && lvl_flame < 2) {
+    /* 任一传感器一级 且 无二级及以上 */
+    else if (any_l1 && !any_l2) {
         target_level = ALARM_L1;
     }
     else {
@@ -202,27 +209,53 @@ static void alarm_eval_levels(void)
 }
 
 /* ============================================================
- * 防误报延时：三级瞬时；一二级连续 N 次稳定才升；target=0 立即回正常
- * （降级 10s 延时为 ★扩展点，本次 target=0 直接回 0）
+ * 防误报延时：三级瞬时；一二级连续 N 次稳定才升
+ * 升级：处于 L1/L2 超过 10s → 自动升一级
+ * 降级：target=0 持续 10s → 恢复正常
  * ============================================================ */
 static void alarm_apply_stable(void)
 {
+    /* target 变化 → 重置升级/降级计时 */
+    if (target_level != prev_target) {
+        level_ticks = 0;
+        prev_target = target_level;
+    }
     /* 三级瞬时触发 */
     if (target_level == ALARM_L3) {
         cur_level = ALARM_L3;
         stable_cnt = 0;
+        level_ticks = 0;
         return;
     }
-    /* 一二级：连续 N 次稳定才升（L1/L2 互斥，共用计数器） */
+    /* 一二级：连续 N 次稳定才升 */
     if (target_level == ALARM_L1 || target_level == ALARM_L2) {
         stable_cnt++;
-        if (stable_cnt >= ALARM_STABLE_N && cur_level < target_level)
+        if (stable_cnt >= ALARM_STABLE_N && cur_level < target_level) {
             cur_level = target_level;
+            level_ticks = 0;
+        }
+        /* 升级：处于 L1/L2 超过 10s → 自动升一级 */
+        if (cur_level > ALARM_NORMAL && cur_level < ALARM_L3) {
+            level_ticks++;
+            if (level_ticks >= ALARM_UPGRADE_TICKS) {
+                cur_level++;
+                level_ticks = 0;
+            }
+        }
         return;
     }
-    /* target=0：本次直接回正常 */
+    /* target=0：10s 稳定后降级 */
+    if (cur_level > ALARM_NORMAL) {
+        level_ticks++;
+        if (level_ticks >= ALARM_UPGRADE_TICKS) {
+            cur_level = ALARM_NORMAL;
+            level_ticks = 0;
+        }
+        return;
+    }
     cur_level = ALARM_NORMAL;
     stable_cnt = 0;
+    level_ticks = 0;
 }
 
 /* ============================================================
@@ -342,7 +375,7 @@ void alarm_tick(void)
             log_cnt = 0;
             printf("L%d|S:%d^%d F1:%d^%d F2:%d^%d L:%d^%d T1:%d/%d!%d^%d T2:%d/%d!%d^%d R:%d|F:%d%% P:%d B:L%d D:L%d\r\n",
                    cur_level, s_smoke, lvl_smoke, s_f1, classify_flame(s_f1), s_f2, classify_flame(s_f2), s_light, lvl_light,
-                   s_t1, s_h1, s_ok1, lvl_temp, s_t2, s_h2, s_ok2, lvl_temp, s_rate, out_fan_pct, out_pump_on, (!enabled || mute_flag || cur_level == ALARM_NORMAL) ? 0 : cur_level, (mute_flag || last_disp_level == 0xFF) ? 0xFF : last_disp_level);
+                   s_t1, s_h1, s_ok1, lvl_temp, s_t2, s_h2, s_ok2, lvl_temp, s_rate, (cur_level == ALARM_NORMAL) ? 0 : (cur_level == ALARM_L1) ? 30 : (cur_level == ALARM_L2) ? 60 : 100, (cur_level >= ALARM_L2) ? 1 : 0, (mute_flag || cur_level == ALARM_NORMAL) ? 0 : cur_level, (mute_flag) ? 0xFF : cur_level);
         }
     }
 #endif
@@ -360,6 +393,8 @@ void alarm_init(void)
     last_disp_level = 0xFF;
     dht_inited = 0;
     stable_cnt = 0;
+    level_ticks = 0;
+    prev_target = ALARM_NORMAL;
     manual_mask = 0;
 
     alarm_sample_adc();
