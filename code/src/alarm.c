@@ -187,7 +187,7 @@ static void alarm_eval_levels(void)
     lvl_light = (s_light <= 800U) ? 1 : 0;   /* 光敏二元: ≤800=异常 */
     if (s_temp_ok) {
         lt = classify((u16)s_temp, (u16)TEMP_L1, (u16)TEMP_L2, (u16)TEMP_L3);
-        lr = classify((u16)s_rate, (u16)RATE_L1, (u16)RATE_L2, (u16)RATE_L3);
+        lr = (s_rate > 0) ? classify((u16)s_rate, (u16)RATE_L1, (u16)RATE_L2, (u16)RATE_L3) : 0;
         lvl_temp = (lt > lr) ? lt : lr;     /* 温度+速率取大 */
     } else {
         lvl_temp = 0;     /* 读数无效不参与 */
@@ -240,8 +240,8 @@ static void alarm_apply_stable(void)
         return;
     }
 
-    /* 升降级：自动升级过头后逐级回落 */
-    if (cur_level > target_level && target_level > ALARM_NORMAL) {
+    /* 降级：自动升级到 L3 后条件回落，逐级下降 */
+    if (cur_level == ALARM_L3 && target_level > ALARM_NORMAL && target_level < ALARM_L3) {
         level_ticks++;
         if (level_ticks >= ALARM_UPGRADE_TICKS) {
             cur_level--;
@@ -257,8 +257,8 @@ static void alarm_apply_stable(void)
             cur_level = target_level;
             level_ticks = 0;
         }
-        /* 升级：处于 L1/L2 超过 10s → 自动升一级 */
-        if (cur_level > ALARM_NORMAL && cur_level < ALARM_L3) {
+        /* 升级：处于 L1/L2 超过 10s → 自动升一级（仅 target 未回落时） */
+        if (cur_level > ALARM_NORMAL && cur_level < ALARM_L3 && target_level >= cur_level) {
             level_ticks++;
             if (level_ticks >= ALARM_UPGRADE_TICKS) {
                 cur_level++;

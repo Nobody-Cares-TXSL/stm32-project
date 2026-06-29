@@ -81,7 +81,7 @@ static void ws_reset(volatile GPIO_TypeDef *port, u32 low)
 {
     u16 i;
     port->BSRR = low;
-    for (i = 0; i < 3600; i++) __NOP();   /* 3600+ nops * 13.89ns > 50us reset */
+    for (i = 0; i < 7200; i++) __NOP();   /* 7200 nops * 13.89ns = 100us, safe margin */
 }
 
 /* get RGB for mode */
