@@ -65,5 +65,6 @@ u8   alarm_get_light_level(void);
 u8   alarm_get_temp_n(u8 n);     /* n=1/2, 单路温度 */
 u8   alarm_get_humi_n(u8 n);     /* n=1/2, 单路湿度 */
 u16  alarm_get_flame_n(u8 n);    /* n=1/2, 单路火焰 AO */
+u8   alarm_get_temp_n_ok(u8 n);    /* n=1/2, 按路温度有效 1/0 */
 
 #endif /* __ALARM_H */

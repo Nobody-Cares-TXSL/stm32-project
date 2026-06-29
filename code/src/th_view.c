@@ -76,7 +76,7 @@ void th_view_tick(void)
     th_tick = 0;
 
     th_ok1 = alarm_get_temp_ok();
-    th_ok2 = th_ok1;
+    th_ok2 = alarm_get_temp_n_ok(2);
     th_t1 = alarm_get_temp_n(1);  th_h1 = alarm_get_humi_n(1);
     th_t2 = alarm_get_temp_n(2);  th_h2 = alarm_get_humi_n(2);
 

@@ -90,9 +90,12 @@ static u16 mute_remain = 0;    /* 静音剩余 tick（10ms 单位） */
 static u8  manual_mask = 0;    /* 手动覆盖位掩码 */
 
 static u8  s_t1 = 0, s_h1 = 0, s_t2 = 0, s_h2 = 0;
+static u8  s_ok1 = 0, s_ok2 = 0;   /* 按路读取成功状态 */
 static u16 s_f1 = 0, s_f2 = 0;
 
-#define LIGHT_L1      3276U     /* AO > 此值 = 亮度 80% */
+#define LIGHT_L1      1900U     /* inverted > 此值：斜 24%（需标定；最簇 inverted↓2211，最暗↓1801） */
+#define LIGHT_L2      2000U     /* inverted > 此值：斜 48% */
+#define LIGHT_L3      2100U     /* inverted > 此值：斜 73% */
 
 /* ============================================================
  * 单项阈值判定
@@ -151,6 +154,7 @@ static void alarm_sample_dht(void)
 
         if (ok1) { s_t1 = t1; s_h1 = h1; }
         if (ok2) { s_t2 = t2; s_h2 = h2; }
+        s_ok1 = ok1; s_ok2 = ok2;
     } else {
         s_temp_ok = 0;     /* 保持上次温度，速率置 0（不误报） */
         s_rate = 0;
@@ -166,7 +170,7 @@ static void alarm_eval_levels(void)
 
     lvl_smoke = classify(s_smoke, SMOKE_L1, SMOKE_L2, SMOKE_L3);
     lvl_flame = classify_flame(s_flame);
-    lvl_light = classify(s_light, LIGHT_L1, 3686U, 3932U);   /* 80%/90%/96% 亮度分级 */
+    lvl_light = classify((u16)(4095 - s_light), LIGHT_L1, LIGHT_L2, LIGHT_L3);   /* inverted: 亮↓高值↓报警 */
     if (s_temp_ok) {
         lt = classify((u16)s_temp, (u16)TEMP_L1, (u16)TEMP_L2, (u16)TEMP_L3);
         lr = classify((u16)s_rate, (u16)RATE_L1, (u16)RATE_L2, (u16)RATE_L3);
@@ -328,7 +332,7 @@ void alarm_tick(void)
     /* 每 1s 打印一次状态 */
     {
         static u16 log_cnt = 0;
-        if (++log_cnt >= 100) {
+        if (++log_cnt >= 300) {   /* 300*10ms = 3s */
             log_cnt = 0;
             printf("[ALARM] L%d smoke=%d F1=%d F2=%d light=%d T1=%d H1=%d T2=%d H2=%d rate=%d fan=%d pump=%d beep=%d led=%d\r\n",
                    cur_level, s_smoke, s_f1, s_f2, s_light, s_t1, s_h1, s_t2, s_h2, s_rate,
@@ -392,4 +396,5 @@ void alarm_manual_release(u8 mask)  { manual_mask &= ~mask; }
 u8   alarm_get_temp_n(u8 n)  { return (n == 1) ? s_t1 : s_t2; }
 u8   alarm_get_humi_n(u8 n)  { return (n == 1) ? s_h1 : s_h2; }
 u16  alarm_get_flame_n(u8 n) { return (n == 1) ? s_f1 : s_f2; }
+u8   alarm_get_temp_n_ok(u8 n) { return (n == 1) ? s_ok1 : s_ok2; }
 
