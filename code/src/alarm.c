@@ -153,7 +153,7 @@ static void alarm_sample_dht(void)
         if (ok1) { s_t1 = t1; s_h1 = h1; }
         if (ok2) { s_t2 = t2; s_h2 = h2; }
         s_ok1 = ok1; s_ok2 = ok2;
-        printf("[DHT] ok1=%d ok2=%d T=%d/%d H=%d/%d\r\n", ok1, ok2, t1, t2, h1, h2);
+
     } else {
         s_temp_ok = 0;     /* 保持上次温度，速率置 0（不误报） */
         s_rate = 0;
@@ -340,9 +340,9 @@ void alarm_tick(void)
         static u16 log_cnt = 0;
         if (++log_cnt >= 300) {   /* 300*10ms = 3s */
             log_cnt = 0;
-            printf("[ALARM] L%d smoke=%d F1=%d F2=%d light=%d T1=%d H1=%d T2=%d H2=%d rate=%d fan=%d pump=%d beep=%d led=%d\r\n",
-                   cur_level, s_smoke, s_f1, s_f2, s_light, s_t1, s_h1, s_t2, s_h2, s_rate,
-                   out_fan_pct, out_pump_on, beep_cur_on, last_disp_level);
+            printf("[ALARM] L%d | S:%d(%d) F1:%d(%d) F2:%d(%d) L:%d(%d) T1:%d/%d(%d) T2:%d/%d(%d) R:%d | fan:%d%% pump:%d beep:L%d led:L%d\r\n",
+                   cur_level, s_smoke, lvl_smoke, s_f1, classify_flame(s_f1), s_f2, classify_flame(s_f2), s_light, lvl_light,
+                   s_t1, s_h1, s_ok1, s_t2, s_h2, s_ok2, s_rate, out_fan_pct, out_pump_on, (!enabled || mute_flag || cur_level == ALARM_NORMAL) ? 0 : cur_level, (mute_flag || last_disp_level == 0xFF) ? 0xFF : last_disp_level);
         }
     }
 #endif
