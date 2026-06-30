@@ -30,7 +30,7 @@ static u16 boot_ticks = 0;
 static u16 send_tick = 0;
 
 /* ====== pre-built sensor frame ====== */
-static char frame_buf[128];
+static char frame_buf[96];
 static u8   frame_len = 0;
 
 /* ====== AT init commands, one per state WIFI_AT..WIFI_SERVER ====== */
@@ -275,7 +275,6 @@ void wifi_tick(void)
 
     /* ---- SEND_DATA: push sensor frame ---- */
     case WIFI_SEND_DATA:
-        printf("[WIFI] DATA: %s", frame_buf);
         wifi_send_str(frame_buf);
         at_tick    = 0;
         wifi_state = WIFI_SEND_WAIT;
@@ -306,9 +305,8 @@ void wifi_tick(void)
         break;
     }
 
-    /* drain unsolicited RX lines (e.g. busy pings, link status) */
+    /* drain unsolicited RX lines */
     if (WIFI_RX_STA) {
-        printf("[WIFI] RX: %s", WIFI_RX_BUF);
         wifi_rx_clear();
     }
 }
