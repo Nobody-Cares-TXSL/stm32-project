@@ -20,19 +20,21 @@
 #define SMOKE_L3      3000U   /* >3000=三级 */
 #define SMOKE_SEVERE  3500U   /* >3500 + 温度>55 → 瞬时三级 */
 
-#define TEMP_L1       30
-#define TEMP_L2       40
-#define TEMP_L3       60
+#define TEMP_L1       32    /* 32℃ */
+#define TEMP_L2       35    /* 35℃ */
+#define TEMP_L3       37    /* 37℃ */
 #define TEMP_SEVERE   55         /* 严重超标速判 */
 
-#define RATE_L1       5          /* 升温速率 x10 ℃/s：5=0.5 */
-#define RATE_L2       10
-#define RATE_L3       25
+#define RATE_L1       1          /* 0.1 ℃/s */
+#define RATE_L2       2           /* 0.2 ℃/s */
+#define RATE_L3       3           /* 0.3 ℃/s */
 
 /* 火焰 AO 反向：有火时 AO 拉低（flame_view 验证 <3000=火），值越小火越大 */
 #define FLAME_L1      3000U      /* AO < 此值 = 一级火 */
 #define FLAME_L2      2000U      /* AO < 此值 = 二级 */
 #define FLAME_L3      1000U      /* AO < 此值 = 三级（阈值待硬件标定） */
+#define LIGHT_DARK   3000U      /* 光敏 > 此值 = 太暗，开灯带 */
+#define LIGHT_BRIGHT  400U       /* 光敏 < 此值 = 极亮，关灯带 */
 
 /* ============================================================
  * 节流 / 防误报 / 断续计时（单位：10ms tick）
@@ -209,7 +211,7 @@ static void alarm_eval_levels(void)
         target_level = ALARM_L3;
     }
     /* (烟+温同时 >= 二级) 或 任一传感器三级 */
-    else if ((lvl_smoke >= 2 && lvl_temp >= 2) || any_l3 || any_l2) {
+    else if ((lvl_smoke >= 2 && lvl_temp >= 2) || any_l3) {
         target_level = ALARM_L2;
     }
     /* 任一传感器一级 且 无二级及以上 */
@@ -301,24 +303,37 @@ static void alarm_dispatch_actuators(void)
     if (!enabled) return;     /* 调试模式：不接管执行器 */
 
     switch (cur_level) {
-    case ALARM_NORMAL:
+        case ALARM_NORMAL:
         if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(0); out_fan_pct = 0; }
-        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_off();      out_pump_on = 0; }
         beep_period = 0;
-        /* ★扩展点：天黑白光常亮（光敏联动） */
+        /* light-based LED: dark -> white on, bright -> off */
+        if (!(manual_mask & ALARM_MANUAL_LEDSTRIP)) {
+            if (s_light > LIGHT_DARK) {
+                if (last_disp_level != 0) {
+                    ledstrip_set_mode(LEDSTRIP_1, 0);
+                    ledstrip_set_mode(LEDSTRIP_2, 0);
+                    last_disp_level = 0;
+                }
+            } else {
+                if (last_disp_level != 0xFF) {
+                    ledstrip_all_off();
+                    last_disp_level = 0xFF;
+                }
+            }
+        }
         break;
+
     case ALARM_L1:
         if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(30); out_fan_pct = 30; }
-        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_off();      out_pump_on = 0; }
         beep_period = BEEP_L1_PERIOD;
         break;
+
     case ALARM_L2:
         if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(60); out_fan_pct = 60; }
-        /* ★扩展点：pump 二级预加压 */
-        if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_on();       out_pump_on = 1; }
         beep_period = BEEP_L2_PERIOD;
         break;
-    case ALARM_L3:
+
+case ALARM_L3:
         /* ★扩展点：风扇助燃防护（升温速率达二级且烟雾偏低→不启动） */
         if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(100); out_fan_pct = 100; }
         if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_on();        out_pump_on = 1; }
