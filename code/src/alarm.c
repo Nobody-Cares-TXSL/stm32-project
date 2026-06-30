@@ -34,6 +34,7 @@
 #define FLAME_L2      2000U      /* AO < ��ֵ = ���� */
 #define FLAME_L3      1000U      /* AO < ��ֵ = ��������ֵ��Ӳ���궨�� */
 #define LIGHT_DARK   3000U      /* ���� > ��ֵ = ̫�������ƴ� */
+#define LIGHT_OFF    2500U      /* hyst off threshold */
 #define LIGHT_BRIGHT  400U       /* ���� < ��ֵ = �������صƴ� */
 
 /* ============================================================
@@ -306,15 +307,16 @@ static void alarm_dispatch_actuators(void)
         case ALARM_NORMAL:
         if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(0); out_fan_pct = 0; }
         beep_period = 0;
-        /* light-based LED: dark -> white on, bright -> off */
+        /* light-based LED: hysteresis ON>3000 OFF<2500 */
         if (!(manual_mask & ALARM_MANUAL_LEDSTRIP) && !mute_flag) {
+            u8 xfer = (last_disp_level >= 1 && last_disp_level <= 3);
             if (s_light > LIGHT_DARK) {
                 if (last_disp_level != 0) {
                     ledstrip_set_mode(LEDSTRIP_1, 0);
                     ledstrip_set_mode(LEDSTRIP_2, 0);
                     last_disp_level = 0;
                 }
-            } else {
+            } else if (s_light < LIGHT_OFF || xfer) {
                 if (last_disp_level != 0xFF) {
                     ledstrip_all_off();
                     last_disp_level = 0xFF;
