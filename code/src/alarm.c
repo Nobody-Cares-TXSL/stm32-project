@@ -7,103 +7,103 @@
 #include "pump.h"      /* pump_on/off */
 #include "beep.h"      /* beep_on/off/toggle */
 #include "ledstrip.h"  /* ledstrip_set_mode / ledstrip_tick */
-#include <stdio.h>     /* printf£¨debug log£© */
+#include <stdio.h>     /* printfï¿½ï¿½debug logï¿½ï¿½ */
 
 /* ============================================================
- * ãÐÖµÅäÖÃ£¨µ÷²ÎÖ»¸ÄÕâÀï£©
- * Ô¼¶¨£ºvalue > LN ²ÅËã´ï N ¼¶£¨ÑÏ¸ñ´óÓÚ£©£¬ÓëÎÄµµ">X"Ò»ÖÂ
- * ÀýÍâ£º»ðÑæ AO ·´Ïò£¨KY-026 ÓÐ»ðÊ±À­µÍ£©£¬¼û classify_flame
+ * ï¿½ï¿½Öµï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï£©
+ * Ô¼ï¿½ï¿½ï¿½ï¿½value > LN ï¿½ï¿½ï¿½ï¿½ï¿½ N ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½ï¿½Ú£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½">X"Ò»ï¿½ï¿½
+ * ï¿½ï¿½ï¿½â£ºï¿½ï¿½ï¿½ï¿½ AO ï¿½ï¿½ï¿½ï¿½KY-026 ï¿½Ð»ï¿½Ê±ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½ï¿½ï¿½ classify_flame
  * ============================================================ */
-#define ALARM_DEBUG_LOG  /* µ÷ÊÔ¿ª¹Ø£ºÃ¿Ãë´®¿Ú´òÓ¡ alarm ×´Ì¬£»ÕýÊ½¹Ì¼þ×¢ÊÍµô´ËÐÐ */
-#define SMOKE_L1      1700U   /* ¡Ý1700=Ò»¼¶ */
-#define SMOKE_L2      2500U   /* ¡Ý2500=¶þ¼¶ */
-#define SMOKE_L3      3000U   /* >3000=Èý¼¶ */
-#define SMOKE_SEVERE  3500U   /* >3500 + ÎÂ¶È>55 ¡ú Ë²Ê±Èý¼¶ */
+#define ALARM_DEBUG_LOG  /* ï¿½ï¿½ï¿½Ô¿ï¿½ï¿½Ø£ï¿½Ã¿ï¿½ë´®ï¿½Ú´ï¿½Ó¡ alarm ×´Ì¬ï¿½ï¿½ï¿½ï¿½Ê½ï¿½Ì¼ï¿½×¢ï¿½Íµï¿½ï¿½ï¿½ï¿½ï¿½ */
+#define SMOKE_L1      1700U   /* ï¿½ï¿½1700=Ò»ï¿½ï¿½ */
+#define SMOKE_L2      2500U   /* ï¿½ï¿½2500=ï¿½ï¿½ï¿½ï¿½ */
+#define SMOKE_L3      3000U   /* >3000=ï¿½ï¿½ï¿½ï¿½ */
+#define SMOKE_SEVERE  3500U   /* >3500 + ï¿½Â¶ï¿½>55 ï¿½ï¿½ Ë²Ê±ï¿½ï¿½ï¿½ï¿½ */
 
-#define TEMP_L1       32    /* 32¡æ */
-#define TEMP_L2       35    /* 35¡æ */
-#define TEMP_L3       37    /* 37¡æ */
-#define TEMP_SEVERE   55         /* ÑÏÖØ³¬±êËÙÅÐ */
+#define TEMP_L1       32    /* 32ï¿½ï¿½ */
+#define TEMP_L2       35    /* 35ï¿½ï¿½ */
+#define TEMP_L3       37    /* 37ï¿½ï¿½ */
+#define TEMP_SEVERE   55         /* ï¿½ï¿½ï¿½Ø³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 
-#define RATE_L1       1          /* 0.1 ¡æ/s */
-#define RATE_L2       2           /* 0.2 ¡æ/s */
-#define RATE_L3       3           /* 0.3 ¡æ/s */
+#define RATE_L1       1          /* 0.1 ï¿½ï¿½/s */
+#define RATE_L2       2           /* 0.2 ï¿½ï¿½/s */
+#define RATE_L3       3           /* 0.3 ï¿½ï¿½/s */
 
-/* »ðÑæ AO ·´Ïò£ºÓÐ»ðÊ± AO À­µÍ£¨flame_view ÑéÖ¤ <3000=»ð£©£¬ÖµÔ½Ð¡»ðÔ½´ó */
-#define FLAME_L1      3000U      /* AO < ´ËÖµ = Ò»¼¶»ð */
-#define FLAME_L2      2000U      /* AO < ´ËÖµ = ¶þ¼¶ */
-#define FLAME_L3      1000U      /* AO < ´ËÖµ = Èý¼¶£¨ãÐÖµ´ýÓ²¼þ±ê¶¨£© */
-#define LIGHT_DARK   3000U      /* ¹âÃô > ´ËÖµ = Ì«°µ£¬¿ªµÆ´ø */
-#define LIGHT_BRIGHT  400U       /* ¹âÃô < ´ËÖµ = ¼«ÁÁ£¬¹ØµÆ´ø */
+/* ï¿½ï¿½ï¿½ï¿½ AO ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½Ê± AO ï¿½ï¿½ï¿½Í£ï¿½flame_view ï¿½ï¿½Ö¤ <3000=ï¿½ð£©£ï¿½ÖµÔ½Ð¡ï¿½ï¿½Ô½ï¿½ï¿½ */
+#define FLAME_L1      3000U      /* AO < ï¿½ï¿½Öµ = Ò»ï¿½ï¿½ï¿½ï¿½ */
+#define FLAME_L2      2000U      /* AO < ï¿½ï¿½Öµ = ï¿½ï¿½ï¿½ï¿½ */
+#define FLAME_L3      1000U      /* AO < ï¿½ï¿½Öµ = ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½Ó²ï¿½ï¿½ï¿½ê¶¨ï¿½ï¿½ */
+#define LIGHT_DARK   3000U      /* ï¿½ï¿½ï¿½ï¿½ > ï¿½ï¿½Öµ = Ì«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ´ï¿½ */
+#define LIGHT_BRIGHT  400U       /* ï¿½ï¿½ï¿½ï¿½ < ï¿½ï¿½Öµ = ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ØµÆ´ï¿½ */
 
 /* ============================================================
- * ½ÚÁ÷ / ·ÀÎó±¨ / ¶ÏÐø¼ÆÊ±£¨µ¥Î»£º10ms tick£©
+ * ï¿½ï¿½ï¿½ï¿½ / ï¿½ï¿½ï¿½ï¿½ / ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½10ms tickï¿½ï¿½
  * ============================================================ */
-#define ALARM_TICK_SAMPLE   10      /* ²É¼¯+ÅÐ¶¨½ÚÁ÷£º100ms */
-#define ALARM_TICK_DHT      200     /* DHT ¶ÁÈ¡½ÚÁ÷£º2s */
-#define ALARM_STABLE_N      3       /* ·ÀÎó±¨£ºÁ¬Ðø 3 ´Î(300ms)ÎÈ¶¨´ï±ê */
+#define ALARM_TICK_SAMPLE   10      /* ï¿½É¼ï¿½+ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½100ms */
+#define ALARM_TICK_DHT      200     /* DHT ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2s */
+#define ALARM_STABLE_N      3       /* ï¿½ï¿½ï¿½ó±¨£ï¿½ï¿½ï¿½ï¿½ï¿½ 3 ï¿½ï¿½(300ms)ï¿½È¶ï¿½ï¿½ï¿½ï¿½ */
 
-#define ALARM_UPGRADE_TICKS 100     /* Éý¼¶/½µ¼¶ÑÓÊ±£º10s(100*100ms) */
-#define BEEP_L1_PERIOD      5000    /* Ò»¼¶¶ÏÐøÖÜÆÚ ms£¨5s¼ä¸ô£© */
-#define BEEP_L2_PERIOD      1000    /* ¶þ¼¶¶ÏÐøÖÜÆÚ ms£¨1s¼ä¸ô£© */
-/* Èý¼¶³ÖÐø³¤Ãù£¬ÎÞ toggle */
+#define ALARM_UPGRADE_TICKS 100     /* ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½10s(100*100ms) */
+#define BEEP_L1_PERIOD      5000    /* Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ msï¿½ï¿½5sï¿½ï¿½ï¿½ï¿½ï¿½ */
+#define BEEP_L2_PERIOD      1000    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ msï¿½ï¿½1sï¿½ï¿½ï¿½ï¿½ï¿½ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ toggle */
 
-/* DHT Á½Â·Òý½Å£¨Óë th_view Ò»ÖÂ£© */
+/* DHT ï¿½ï¿½Â·ï¿½ï¿½ï¿½Å£ï¿½ï¿½ï¿½ th_view Ò»ï¿½Â£ï¿½ */
 #define DHT_PORT1   GPIOB
 #define DHT_PIN1    GPIO_Pin_14
 #define DHT_PORT2   GPIOB
 #define DHT_PIN2    GPIO_Pin_15
 
-/* ====== ²É¼¯½ÚÁ÷ ====== */
+/* ====== ï¿½É¼ï¿½ï¿½ï¿½ï¿½ï¿½ ====== */
 static u16 tick_cnt = 0;
 
-/* ====== ´«¸ÐÆ÷Ô­Ê¼Öµ»º´æ£¨100ms Ë¢ÐÂ£© ====== */
+/* ====== ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô­Ê¼Öµï¿½ï¿½ï¿½æ£¨100ms Ë¢ï¿½Â£ï¿½ ====== */
 static u16 s_smoke   = 0;
-static u16 s_flame   = 0;       /* Á½Â·×îÐ¡£¨Ð¡=»ð£¬È¡×îÎ£ÏÕ£© */
+static u16 s_flame   = 0;       /* ï¿½ï¿½Â·ï¿½ï¿½Ð¡ï¿½ï¿½Ð¡=ï¿½ï¿½È¡ï¿½ï¿½Î£ï¿½Õ£ï¿½ */
 static u16 s_light   = 0;
-static u8  s_temp    = 0;       /* Á½Â·×î´ó */
+static u8  s_temp    = 0;       /* ï¿½ï¿½Â·ï¿½ï¿½ï¿½ */
 static u8  s_humi    = 0;
 static u8  s_temp_ok = 0;
-static s16 s_rate    = 0;       /* x10 ¡æ/s */
+static s16 s_rate    = 0;       /* x10 ï¿½ï¿½/s */
 
-/* ====== DHT ½ÚÁ÷ + ÉýÎÂËÙÂÊ ====== */
+/* ====== DHT ï¿½ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ====== */
 static u8  last_temp  = 0;
-static u8  dht_inited = 0;      /* Ê×´Î¶ÁÈ¡²»ËãËÙÂÊ£¨±ÜÃâ last_temp=0 ÎóÅÐ£© */
+static u8  dht_inited = 0;      /* ï¿½×´Î¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½ï¿½ï¿½ last_temp=0 ï¿½ï¿½ï¿½Ð£ï¿½ */
 
-/* ====== µ¥ÏîµÈ¼¶ ====== */
+/* ====== ï¿½ï¿½ï¿½ï¿½È¼ï¿½ ====== */
 static u8 lvl_smoke = 0, lvl_temp = 0, lvl_flame = 0, lvl_light = 0;
 
-/* ====== ·ÀÎó±¨ ====== */
+/* ====== ï¿½ï¿½ï¿½ï¿½ ====== */
 static u8 target_level = ALARM_NORMAL;
 static u8 cur_level    = ALARM_NORMAL;
-static u8 stable_cnt   = 0;     /* L1/L2 ¹²ÓÃ£¨target »¥³â£©£¬L3/NORMAL Ê±ÇåÁã */
-static u16 level_ticks = 0;    /* µ±Ç°µÈ¼¶³ÖÐø tick Êý£¬ÓÃÓÚÉý¼¶/½µ¼¶ */
-static u8  prev_target = ALARM_NORMAL;  /* ÉÏÒ»´Î target£¬ÇÐ»»Ê±ÖØÖÃ¼ÆÊ± */
+static u8 stable_cnt   = 0;     /* L1/L2 ï¿½ï¿½ï¿½Ã£ï¿½target ï¿½ï¿½ï¿½â£©ï¿½ï¿½L3/NORMAL Ê±ï¿½ï¿½ï¿½ï¿½ */
+static u16 level_ticks = 0;    /* ï¿½ï¿½Ç°ï¿½È¼ï¿½ï¿½ï¿½ï¿½ï¿½ tick ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ */
+static u8  prev_target = ALARM_NORMAL;  /* ï¿½ï¿½Ò»ï¿½ï¿½ targetï¿½ï¿½ï¿½Ð»ï¿½Ê±ï¿½ï¿½ï¿½Ã¼ï¿½Ê± */
 
-/* ====== Ö´ÐÐÆ÷ÏÂ·¢ ====== */
+/* ====== Ö´ï¿½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ ====== */
 static u8  out_fan_pct     = 0;
 static u8  out_pump_on     = 0;
-static u8  last_disp_level = 0xFF;   /* ×·×ÙµÈ¼¶±ä»¯£¬±ÜÃâÖØ¸´ÏÂ·¢ ledstrip */
-static u16 beep_period     = 0;      /* µ±Ç° beep ¶ÏÐøÖÜÆÚ ms */
+static u8  last_disp_level = 0xFF;   /* ×·ï¿½ÙµÈ¼ï¿½ï¿½ä»¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø¸ï¿½ï¿½Â·ï¿½ ledstrip */
+static u16 beep_period     = 0;      /* ï¿½ï¿½Ç° beep ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ms */
 static u16 beep_phase_cnt  = 0;
 static u8  beep_cur_on     = 0;
 
-/* ====== ¿ª¹Ø / ÏûÒô ====== */
+/* ====== ï¿½ï¿½ï¿½ï¿½ / ï¿½ï¿½ï¿½ï¿½ ====== */
 static u8 enabled   = 1;
-static u8 mute_flag = 0;        /* Ô¤Áô */
-static u16 mute_remain = 0;    /* ¾²ÒôÊ£Óà tick£¨10ms µ¥Î»£© */
-static u8  manual_mask = 0;    /* ÊÖ¶¯¸²¸ÇÎ»ÑÚÂë */
+static u8 mute_flag = 0;        /* Ô¤ï¿½ï¿½ */
+static u16 mute_remain = 0;    /* ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ tickï¿½ï¿½10ms ï¿½ï¿½Î»ï¿½ï¿½ */
+static u8  manual_mask = 0;    /* ï¿½Ö¶ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ */
 
 static u8  s_t1 = 0, s_h1 = 0, s_t2 = 0, s_h2 = 0;
-static u8  s_ok1 = 0, s_ok2 = 0;   /* °´Â·¶ÁÈ¡³É¹¦×´Ì¬ */
+static u8  s_ok1 = 0, s_ok2 = 0;   /* ï¿½ï¿½Â·ï¿½ï¿½È¡ï¿½É¹ï¿½×´Ì¬ */
 static u16 s_f1 = 0, s_f2 = 0;
 
-/* ¹âÃô¸ÄÎª¶þÔªÅÐ¶¨ (s_light<=800=Òì³£)£¬Èý¼¶ãÐÖµºêÒÑÉ¾³ý */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½Ôªï¿½Ð¶ï¿½ (s_light<=800=ï¿½ì³£)ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½ */
 
 /* ============================================================
- * µ¥ÏîãÐÖµÅÐ¶¨
- * smoke/temp/rate£ºvalue > LN ´ï N ¼¶£¨ÖµÔ½´óÔ½ÑÏÖØ£©
- * flame µ¥¶À·´Ïò£¨¼ûÏÂ£©
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½Ð¶ï¿½
+ * smoke/temp/rateï¿½ï¿½value > LN ï¿½ï¿½ N ï¿½ï¿½ï¿½ï¿½ÖµÔ½ï¿½ï¿½Ô½ï¿½ï¿½ï¿½Ø£ï¿½
+ * flame ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ò£¨¼ï¿½ï¿½Â£ï¿½
  * ============================================================ */
 static u8 classify(u16 v, u16 l1, u16 l2, u16 l3)
 {
@@ -113,7 +113,7 @@ static u8 classify(u16 v, u16 l1, u16 l2, u16 l3)
     return 0;
 }
 
-/* »ðÑæ·´Ïò£ºAO Ô½Ð¡Ô½ÑÏÖØ£¨KY-026 ÓÐ»ðÀ­µÍ AO£¬flame_view ÑéÖ¤£© */
+/* ï¿½ï¿½ï¿½æ·´ï¿½ï¿½AO Ô½Ð¡Ô½ï¿½ï¿½ï¿½Ø£ï¿½KY-026 ï¿½Ð»ï¿½ï¿½ï¿½ï¿½ï¿½ AOï¿½ï¿½flame_view ï¿½ï¿½Ö¤ï¿½ï¿½ */
 static u8 classify_flame(u16 v)
 {
     if (v < FLAME_L3) return 3;
@@ -122,7 +122,7 @@ static u8 classify_flame(u16 v)
     return 0;
 }
 /* ============================================================
- * ²É¼¯
+ * ï¿½É¼ï¿½
  * ============================================================ */
 static void alarm_sample_adc(void)
 {
@@ -130,31 +130,31 @@ static void alarm_sample_adc(void)
     s_smoke = smoke_read_ao();
     f1 = flame_read_ao(FLAME_SENSOR_1);
     f2 = flame_read_ao(FLAME_SENSOR_2);
-    s_flame = (f1 < f2) ? f1 : f2;     s_f1 = f1; s_f2 = f2;     /* È¡Á½Â·×îÐ¡£¨Ð¡=»ð£¬±£ÊØÈ¡×îÎ£ÏÕ£© */
+    s_flame = (f1 < f2) ? f1 : f2;     s_f1 = f1; s_f2 = f2;     /* È¡ï¿½ï¿½Â·ï¿½ï¿½Ð¡ï¿½ï¿½Ð¡=ï¿½ð£¬±ï¿½ï¿½ï¿½È¡ï¿½ï¿½Î£ï¿½Õ£ï¿½ */
     s_light = light_read_ao();
 }
 
 /**
- * @brief ²É¼¯DHTÎÂÊª¶È´«¸ÐÆ÷Êý¾Ý²¢¸üÐÂ×´Ì¬
- * ¸Ãº¯Êý´ÓÁ½¸öDHT´«¸ÐÆ÷¶ÁÈ¡ÎÂ¶ÈºÍÊª¶È£¬¼ÆËã×î¸ßÎÂ¶È¡¢Êª¶ÈÖµºÍÎÂ¶È±ä»¯ÂÊ
- * ²¢¸üÐÂÈ«¾Ö×´Ì¬±äÁ¿
+ * @brief ï¿½É¼ï¿½DHTï¿½ï¿½Êªï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
+ * ï¿½Ãºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½DHTï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½Â¶Èºï¿½Êªï¿½È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¶È¡ï¿½Êªï¿½ï¿½Öµï¿½ï¿½ï¿½Â¶È±ä»¯ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½
  */
 static void alarm_sample_dht(void)
 {
-    u8 t1 = 0, h1 = 0, t2 = 0, h2 = 0;    // Á½¸ö´«¸ÐÆ÷µÄÎÂ¶ÈºÍÊª¶ÈÊý¾Ý
-    u8 ok1, ok2;                          // Á½¸ö´«¸ÐÆ÷¶ÁÈ¡×´Ì¬±êÖ¾
+    u8 t1 = 0, h1 = 0, t2 = 0, h2 = 0;    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¶Èºï¿½Êªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    u8 ok1, ok2;                          // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡×´Ì¬ï¿½ï¿½Ö¾
     u8 new_temp = 0;
 
-    // ¶ÁÈ¡Á½¸ö´«¸ÐÆ÷µÄÎÂÊª¶ÈÊý¾Ý
+    // ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     ok1 = dht_read(DHT_PORT1, DHT_PIN1, &t1, &h1);
     ok2 = dht_read(DHT_PORT2, DHT_PIN2, &t2, &h2);
 
     if (ok1 || ok2) {
         s_temp_ok = 1;
         if (ok1 && t1 > new_temp) new_temp = t1;
-        if (ok2 && t2 > new_temp) new_temp = t2;   /* Á½Â·È¡×î´ó */
-        s_humi = ok1 ? h1 : h2;                    /* Êª¶ÈÈ¡³É¹¦ÄÇÂ· */
-        /* ÉýÎÂËÙÂÊ x10 ¡æ/s = (¦¤temp / 2s) * 10 = ¦¤temp * 5 */
+        if (ok2 && t2 > new_temp) new_temp = t2;   /* ï¿½ï¿½Â·È¡ï¿½ï¿½ï¿½ */
+        s_humi = ok1 ? h1 : h2;                    /* Êªï¿½ï¿½È¡ï¿½É¹ï¿½ï¿½ï¿½Â· */
+        /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ x10 ï¿½ï¿½/s = (ï¿½ï¿½temp / 2s) * 10 = ï¿½ï¿½temp * 5 */
         s_rate = dht_inited ? (s16)(((s16)new_temp - (s16)last_temp) * 5) : 0;
         dht_inited = 1;
         last_temp = new_temp;
@@ -165,38 +165,38 @@ static void alarm_sample_dht(void)
         s_ok1 = ok1; s_ok2 = ok2;
 
     } else {
-        s_temp_ok = 0;     /* ±£³ÖÉÏ´ÎÎÂ¶È£¬ËÙÂÊÖÃ 0£¨²»Îó±¨£© */
+        s_temp_ok = 0;     /* ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ï¿½Â¶È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0ï¿½ï¿½ï¿½ï¿½ï¿½ó±¨£ï¿½ */
         s_rate = 0;
         s_ok1 = 0; s_ok2 = 0;
     }
 }
 
 /* ============================================================
- * µÈ¼¶ÅÐ¶¨£ºµ¥Ïî ¡ú ¿çÄ£¿é¹æÔò + ÑÏÖØ³¬±êËÙÅÐ ¡ú target_level
+ * ï¿½È¼ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½Ø³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ target_level
  * ============================================================ */
 /**
- * @brief ÆÀ¹À±¨¾¯µÈ¼¶
- * @details ¸ù¾ÝÑÌÎí¡¢ÎÂ¶È¡¢»ðÑæºÍ¹âÕÕ´«¸ÐÆ÷µÄ¶ÁÊý£¬×ÛºÏÅÐ¶Ïµ±Ç°±¨¾¯µÈ¼¶
- * @note ¸Ãº¯Êý»á¸üÐÂÈ«¾Ö±äÁ¿target_levelµÄÖµ
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½
+ * @details ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¶È¡ï¿½ï¿½ï¿½ï¿½ï¿½Í¹ï¿½ï¿½Õ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ûºï¿½ï¿½Ð¶Ïµï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½
+ * @note ï¿½Ãºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½Ö±ï¿½ï¿½ï¿½target_levelï¿½ï¿½Öµ
  */
 static void alarm_eval_levels(void)
 {
-    u8 lt, lr, any_l3, any_l2, any_l1;  // ¶¨Òå¾Ö²¿±äÁ¿£¬ÓÃÓÚ´æ´¢¸÷Àà±¨¾¯µÈ¼¶
+    u8 lt, lr, any_l3, any_l2, any_l1;  // ï¿½ï¿½ï¿½ï¿½Ö²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú´æ´¢ï¿½ï¿½ï¿½à±¨ï¿½ï¿½ï¿½È¼ï¿½
 
-    /* ¶ÔÑÌÎí´«¸ÐÆ÷½øÐÐµÈ¼¶·ÖÀà */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÐµÈ¼ï¿½ï¿½ï¿½ï¿½ï¿½ */
     lvl_smoke = classify(s_smoke, SMOKE_L1, SMOKE_L2, SMOKE_L3);
-    /* ¶Ô»ðÑæ´«¸ÐÆ÷½øÐÐµÈ¼¶·ÖÀà */
+    /* ï¿½Ô»ï¿½ï¿½æ´«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÐµÈ¼ï¿½ï¿½ï¿½ï¿½ï¿½ */
     lvl_flame = classify_flame(s_flame);
-    lvl_light = (s_light <= 800U) ? 1 : 0;   /* ¹âÃô¶þÔª: ¡Ü800=Òì³£ */
+    lvl_light = (s_light <= 800U) ? 1 : 0;   /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôª: ï¿½ï¿½800=ï¿½ì³£ */
     if (s_temp_ok) {
         lt = classify((u16)s_temp, (u16)TEMP_L1, (u16)TEMP_L2, (u16)TEMP_L3);
         lr = (s_rate > 0) ? classify((u16)s_rate, (u16)RATE_L1, (u16)RATE_L2, (u16)RATE_L3) : 0;
-        lvl_temp = (lt > lr) ? lt : lr;     /* ÎÂ¶È+ËÙÂÊÈ¡´ó */
+        lvl_temp = (lt > lr) ? lt : lr;     /* ï¿½Â¶ï¿½+ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ */
     } else {
-        lvl_temp = 0;     /* ¶ÁÊýÎÞÐ§²»²ÎÓë */
+        lvl_temp = 0;     /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     }
 
-    /* ÑÏÖØ³¬±êËÙÅÐ£¨Ë²Ê±Èý¼¶£¬ÎÞÑÓÊ±£© */
+    /* ï¿½ï¿½ï¿½Ø³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½Ë²Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ */
     if (s_smoke > SMOKE_SEVERE && s_temp_ok && s_temp > TEMP_SEVERE) {
         target_level = ALARM_L3;
         return;
@@ -206,15 +206,15 @@ static void alarm_eval_levels(void)
     any_l2 = (lvl_smoke >= 2 || lvl_temp >= 2 || lvl_flame >= 2);
     any_l1 = (lvl_smoke >= 1 || lvl_temp >= 1 || lvl_flame >= 1);
 
-    /* ÑÌ+ÎÂ+»ð ÈýÕßÍ¬Ê± >= ¶þ¼¶ */
+    /* ï¿½ï¿½+ï¿½ï¿½+ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Í¬Ê± >= ï¿½ï¿½ï¿½ï¿½ */
     if (lvl_smoke >= 2 && lvl_temp >= 2 && lvl_flame >= 2) {
         target_level = ALARM_L3;
     }
-    /* (ÑÌ+ÎÂÍ¬Ê± >= ¶þ¼¶) »ò ÈÎÒ»´«¸ÐÆ÷Èý¼¶ */
+    /* (ï¿½ï¿½+ï¿½ï¿½Í¬Ê± >= ï¿½ï¿½ï¿½ï¿½) ï¿½ï¿½ ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     else if ((lvl_smoke >= 2 && lvl_temp >= 2) || any_l3) {
         target_level = ALARM_L2;
     }
-    /* ÈÎÒ»´«¸ÐÆ÷Ò»¼¶ ÇÒ ÎÞ¶þ¼¶¼°ÒÔÉÏ */
+    /* ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ ï¿½ï¿½ ï¿½Þ¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     else if (any_l1 && !any_l2) {
         target_level = ALARM_L1;
     }
@@ -224,18 +224,18 @@ static void alarm_eval_levels(void)
 }
 
 /* ============================================================
- * ·ÀÎó±¨ÑÓÊ±£ºÈý¼¶Ë²Ê±£»Ò»¶þ¼¶Á¬Ðø N ´ÎÎÈ¶¨²ÅÉý
- * Éý¼¶£º´¦ÓÚ L1/L2 ³¬¹ý 10s ¡ú ×Ô¶¯ÉýÒ»¼¶
- * ½µ¼¶£ºtarget=0 ³ÖÐø 10s ¡ú »Ö¸´Õý³£
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë²Ê±ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ N ï¿½ï¿½ï¿½È¶ï¿½ï¿½ï¿½ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ L1/L2 ï¿½ï¿½ï¿½ï¿½ 10s ï¿½ï¿½ ï¿½Ô¶ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½target=0 ï¿½ï¿½ï¿½ï¿½ 10s ï¿½ï¿½ ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½
  * ============================================================ */
 static void alarm_apply_stable(void)
 {
-    /* target ±ä»¯ ¡ú ÖØÖÃÉý¼¶/½µ¼¶¼ÆÊ± */
+    /* target ï¿½ä»¯ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê± */
     if (target_level != prev_target) {
         level_ticks = 0;
         prev_target = target_level;
     }
-    /* Èý¼¶Ë²Ê±´¥·¢ */
+    /* ï¿½ï¿½ï¿½ï¿½Ë²Ê±ï¿½ï¿½ï¿½ï¿½ */
     if (target_level == ALARM_L3) {
         cur_level = ALARM_L3;
         stable_cnt = 0;
@@ -243,7 +243,7 @@ static void alarm_apply_stable(void)
         return;
     }
 
-    /* ½µ¼¶£º×Ô¶¯Éý¼¶µ½ L3 ºóÌõ¼þ»ØÂä£¬Öð¼¶ÏÂ½µ */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ L3 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ä£¬ï¿½ï¿½ï¿½Â½ï¿½ */
     if (cur_level == ALARM_L3 && target_level > ALARM_NORMAL && target_level < ALARM_L3) {
         level_ticks++;
         if (level_ticks >= ALARM_UPGRADE_TICKS) {
@@ -253,7 +253,7 @@ static void alarm_apply_stable(void)
         return;
     }
 
-    /* ½µ¼¶£º×Ô¶¯Éý¼¶µ½ L2 ºóÌõ¼þ»ØÂä£¬Öð¼¶ÏÂ½µ */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ L2 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ä£¬ï¿½ï¿½ï¿½Â½ï¿½ */
     if (cur_level == ALARM_L2 && target_level > ALARM_NORMAL && target_level < ALARM_L2) {
         level_ticks++;
         if (level_ticks >= ALARM_UPGRADE_TICKS) {
@@ -263,14 +263,14 @@ static void alarm_apply_stable(void)
         return;
     }
 
-    /* Ò»¶þ¼¶£ºÁ¬Ðø N ´ÎÎÈ¶¨²ÅÉý */
+    /* Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ N ï¿½ï¿½ï¿½È¶ï¿½ï¿½ï¿½ï¿½ï¿½ */
     if (target_level == ALARM_L1 || target_level == ALARM_L2) {
         stable_cnt++;
         if (stable_cnt >= ALARM_STABLE_N && cur_level < target_level) {
             cur_level = target_level;
             level_ticks = 0;
         }
-        /* Éý¼¶£º´¦ÓÚ L1/L2 ³¬¹ý 10s ¡ú ×Ô¶¯ÉýÒ»¼¶£¨½ö target Î´»ØÂäÊ±£© */
+        /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ L1/L2 ï¿½ï¿½ï¿½ï¿½ 10s ï¿½ï¿½ ï¿½Ô¶ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ target Î´ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ */
         if (cur_level > ALARM_NORMAL && cur_level < ALARM_L3 && target_level > cur_level) {
             level_ticks++;
             if (level_ticks >= ALARM_UPGRADE_TICKS) {
@@ -280,7 +280,7 @@ static void alarm_apply_stable(void)
         }
         return;
     }
-    /* target=0£º10s ÎÈ¶¨ºó½µ¼¶ */
+    /* target=0ï¿½ï¿½10s ï¿½È¶ï¿½ï¿½ó½µ¼ï¿½ */
     if (cur_level > ALARM_NORMAL) {
         level_ticks++;
         if (level_ticks >= ALARM_UPGRADE_TICKS) {
@@ -295,19 +295,19 @@ static void alarm_apply_stable(void)
 }
 
 /* ============================================================
- * Ö´ÐÐÆ÷µ÷¶È£ºµÈ¼¶ ¡ú ¶¯×÷¾ØÕó
- * ½ö enabled Ê±ÏÂ·¢£»ledstrip Ö»ÔÚµÈ¼¶±ä»¯Ê±µ÷£¨±ÜÃâÖØÖÃ blink£©
+ * Ö´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È£ï¿½ï¿½È¼ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * ï¿½ï¿½ enabled Ê±ï¿½Â·ï¿½ï¿½ï¿½ledstrip Ö»ï¿½ÚµÈ¼ï¿½ï¿½ä»¯Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ blinkï¿½ï¿½
  * ============================================================ */
 static void alarm_dispatch_actuators(void)
 {
-    if (!enabled) return;     /* µ÷ÊÔÄ£Ê½£º²»½Ó¹ÜÖ´ÐÐÆ÷ */
+    if (!enabled) return;     /* ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¹ï¿½Ö´ï¿½ï¿½ï¿½ï¿½ */
 
     switch (cur_level) {
         case ALARM_NORMAL:
         if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(0); out_fan_pct = 0; }
         beep_period = 0;
         /* light-based LED: dark -> white on, bright -> off */
-        if (!(manual_mask & ALARM_MANUAL_LEDSTRIP)) {
+        if (!(manual_mask & ALARM_MANUAL_LEDSTRIP) && !mute_flag) {
             if (s_light > LIGHT_DARK) {
                 if (last_disp_level != 0) {
                     ledstrip_set_mode(LEDSTRIP_1, 0);
@@ -334,22 +334,22 @@ static void alarm_dispatch_actuators(void)
         break;
 
 case ALARM_L3:
-        /* ¡ïÀ©Õ¹µã£º·çÉÈÖúÈ¼·À»¤£¨ÉýÎÂËÙÂÊ´ï¶þ¼¶ÇÒÑÌÎíÆ«µÍ¡ú²»Æô¶¯£© */
+        /* ï¿½ï¿½ï¿½ï¿½Õ¹ï¿½ã£ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ«ï¿½Í¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
         if (!(manual_mask & ALARM_MANUAL_FAN))  { fan_set_speed(100); out_fan_pct = 100; }
         if (!(manual_mask & ALARM_MANUAL_PUMP)) { pump_on();        out_pump_on = 1; }
-        /* Èý¼¶³ÖÐø³¤Ãù£¬drive_beep ´¦Àí */
-        /* ¡ïÀ©Õ¹µã£ºledstrip Èý¼¶¸ßÆµÉÁ£¨±¾´ÎÓÃ mode 3 ºìÉÁ£© */
+        /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½drive_beep ï¿½ï¿½ï¿½ï¿½ */
+        /* ï¿½ï¿½ï¿½ï¿½Õ¹ï¿½ã£ºledstrip ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ mode 3 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
         break;
     }
 
-    /* ledstrip£ºcur_level Öµ 0/1/2/3 ¶ÔÓ¦ mode£¬ÏûÒôÊ±¹Ø±Õ */
+    /* ledstripï¿½ï¿½cur_level Öµ 0/1/2/3 ï¿½ï¿½Ó¦ modeï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ø±ï¿½ */
     if (!(manual_mask & ALARM_MANUAL_LEDSTRIP)) {
         if (mute_flag) {
             if (last_disp_level != 0xFF) {
                 ledstrip_all_off();
                 last_disp_level = 0xFF;
             }
-        } else if (cur_level != last_disp_level) {
+        } else if (cur_level != ALARM_NORMAL && cur_level != last_disp_level) {
             ledstrip_set_mode(LEDSTRIP_1, cur_level);
             ledstrip_set_mode(LEDSTRIP_2, cur_level);
             last_disp_level = cur_level;
@@ -358,14 +358,14 @@ case ALARM_L3:
 }
 
 /* ============================================================
- * beep ¶ÏÐø/³¤ÃùÇý¶¯£¨Ã¿ 10ms µ÷£©
+ * beep ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ 10ms ï¿½ï¿½ï¿½ï¿½
  * ============================================================ */
 static void alarm_drive_beep(void)
 {
-    if (!enabled) return;     /* µ÷ÊÔÄ£Ê½£º²»½Ó¹Ü beep */
+    if (!enabled) return;     /* ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¹ï¿½ beep */
 
-    /* ¡ïÀ©Õ¹µã£ºÏûÒôÆÚ¼ä£¨mute_flag ÇÒ·ÇÈý¼¶£©¾²Òô */
-    if (mute_flag) {                    /* ÏûÒôÊ±·äÃùÆ÷È«¹Ø£¨º¬ L3£© */
+    /* ï¿½ï¿½ï¿½ï¿½Õ¹ï¿½ã£ºï¿½ï¿½ï¿½ï¿½ï¿½Ú¼ä£¨mute_flag ï¿½Ò·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
+    if (mute_flag) {                    /* ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½Ø£ï¿½ï¿½ï¿½ L3ï¿½ï¿½ */
         if (beep_cur_on) { beep_off(); beep_cur_on = 0; }
         return;
     }
@@ -375,11 +375,11 @@ static void alarm_drive_beep(void)
         beep_phase_cnt = 0;
         return;
     }
-    if (cur_level == ALARM_L3) {          /* ³ÖÐø³¤Ãù */
+    if (cur_level == ALARM_L3) {          /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
         if (!beep_cur_on) { beep_on(); beep_cur_on = 1; }
         return;
     }
-    /* L1/L2 ¶ÏÐø£º°´ÖÜÆÚ toggle */
+    /* L1/L2 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ toggle */
     beep_phase_cnt += 10;
     if (beep_phase_cnt >= beep_period / 2) {
         beep_phase_cnt = 0;
@@ -389,22 +389,22 @@ static void alarm_drive_beep(void)
 }
 
 /* ============================================================
- * Ö÷Ñ­»·Èë¿Ú£¨Ã¿ 10ms£©
+ * ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½Ú£ï¿½Ã¿ 10msï¿½ï¿½
  * ============================================================ */
 void alarm_tick(void)
 {
     tick_cnt++;
 
     if (enabled) {
-        ledstrip_tick();  /* Í³Ò»Çý¶¯µÆ´ø blink */
+        ledstrip_tick();  /* Í³Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Æ´ï¿½ blink */
     }
 
-    /* Ã¿ 2s£º¶Á DHT + ËãÉýÎÂËÙÂÊ£¨·ÅÔÚÅÐ¶¨Ç°£¬È·±£ÓÃ×îÐÂÎÂ/ËÙÂÊ£© */
+    /* Ã¿ 2sï¿½ï¿½ï¿½ï¿½ DHT + ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½Ç°ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½Ê£ï¿½ */
     if (tick_cnt % ALARM_TICK_DHT == 0) {
         alarm_sample_dht();
     }
 
-    /* Ã¿ 100ms£º²É¼¯ ADC + ÅÐ¶¨ + ·ÀÎó±¨ + µ÷¶È */
+    /* Ã¿ 100msï¿½ï¿½ï¿½É¼ï¿½ ADC + ï¿½Ð¶ï¿½ + ï¿½ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½ */
     if (tick_cnt % ALARM_TICK_SAMPLE == 0) {
         alarm_sample_adc();
         alarm_eval_levels();
@@ -412,14 +412,14 @@ void alarm_tick(void)
         alarm_dispatch_actuators();
     }
 
-    /* Ã¿ 10ms£ºbeep ¶ÏÐøÇý¶¯ */
+    /* Ã¿ 10msï¿½ï¿½beep ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     alarm_drive_beep();
     if (mute_flag && mute_remain > 0) {
         if (--mute_remain == 0) mute_flag = 0;
     }
 
 #ifdef ALARM_DEBUG_LOG
-    /* Ã¿ 1s ´òÓ¡Ò»´Î×´Ì¬ */
+    /* Ã¿ 1s ï¿½ï¿½Ó¡Ò»ï¿½ï¿½×´Ì¬ */
     {
         static u16 log_cnt = 0;
         if (++log_cnt >= 300) {   /* 300*10ms = 3s */
@@ -433,7 +433,7 @@ void alarm_tick(void)
 }
 
 /* ============================================================
- * ³õÊ¼»¯ / ¿ª¹Ø / ÏûÒô
+ * ï¿½ï¿½Ê¼ï¿½ï¿½ / ï¿½ï¿½ï¿½ï¿½ / ï¿½ï¿½ï¿½ï¿½
  * ============================================================ */
 void alarm_init(void)
 {
@@ -449,7 +449,7 @@ void alarm_init(void)
     manual_mask = 0;
 
     alarm_sample_adc();
-    alarm_sample_dht();      /* Ê×´Î¶Á£¬rate=0 */
+    alarm_sample_dht();      /* ï¿½×´Î¶ï¿½ï¿½ï¿½rate=0 */
     alarm_eval_levels();
     alarm_apply_stable();
     alarm_dispatch_actuators();
@@ -458,11 +458,11 @@ void alarm_init(void)
 void alarm_enable(u8 on)    { enabled = on; }
 u8   alarm_is_enabled(void) { return enabled; }
 
-void alarm_mute(void)    { mute_flag = 1; mute_remain = 1500; }   /* ¡ïÀ©Õ¹µã£º15s µ¹¼ÆÊ±ºóÐøÊµÏÖ */
+void alarm_mute(void)    { mute_flag = 1; mute_remain = 1500; }   /* ï¿½ï¿½ï¿½ï¿½Õ¹ï¿½ã£º15s ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ */
 u8   alarm_is_muted(void){ return mute_flag; }
 
 /* ============================================================
- * getter£¨Êý¾Ý¾ÛºÏÖÐÐÄ£©
+ * getterï¿½ï¿½ï¿½ï¿½ï¿½Ý¾Ûºï¿½ï¿½ï¿½ï¿½Ä£ï¿½
  * ============================================================ */
 u8  alarm_get_level(void)     { return cur_level; }
 u8  alarm_get_temp(void)      { return s_temp; }
@@ -477,14 +477,14 @@ u8  alarm_get_temp_level(void)  { return lvl_temp; }
 u8  alarm_get_flame_level(void) { return lvl_flame; }
 u8  alarm_get_fan_pct(void)     { return out_fan_pct; }
 u8  alarm_get_pump_on(void)     { return out_pump_on; }
-/* ====== ¹âÃôµÈ¼¶ ====== */
+/* ====== ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ ====== */
 u8   alarm_get_light_level(void)    { return lvl_light; }
 
-/* ====== Ö´ÐÐÆ÷ÊÖ¶¯¸²¸Ç ====== */
+/* ====== Ö´ï¿½ï¿½ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½ï¿½ï¿½ ====== */
 void alarm_manual_override(u8 mask) { manual_mask |= mask; }
 void alarm_manual_release(u8 mask)  { manual_mask &= ~mask; }
 
-/* ====== Öð´«¸ÐÆ÷Ô­Ê¼Öµ getter£¨view ÏÔÊ¾ÓÃ£© ====== */
+/* ====== ï¿½ð´«¸ï¿½ï¿½ï¿½Ô­Ê¼Öµ getterï¿½ï¿½view ï¿½ï¿½Ê¾ï¿½Ã£ï¿½ ====== */
 u8   alarm_get_temp_n(u8 n)  { return (n == 1) ? s_t1 : s_t2; }
 u8   alarm_get_humi_n(u8 n)  { return (n == 1) ? s_h1 : s_h2; }
 u16  alarm_get_flame_n(u8 n) { return (n == 1) ? s_f1 : s_f2; }
