@@ -251,6 +251,16 @@ static void alarm_apply_stable(void)
         return;
     }
 
+    /* 降级：自动升级到 L2 后条件回落，逐级下降 */
+    if (cur_level == ALARM_L2 && target_level > ALARM_NORMAL && target_level < ALARM_L2) {
+        level_ticks++;
+        if (level_ticks >= ALARM_UPGRADE_TICKS) {
+            cur_level--;
+            level_ticks = 0;
+        }
+        return;
+    }
+
     /* 一二级：连续 N 次稳定才升 */
     if (target_level == ALARM_L1 || target_level == ALARM_L2) {
         stable_cnt++;
@@ -259,7 +269,7 @@ static void alarm_apply_stable(void)
             level_ticks = 0;
         }
         /* 升级：处于 L1/L2 超过 10s → 自动升一级（仅 target 未回落时） */
-        if (cur_level > ALARM_NORMAL && cur_level < ALARM_L3 && target_level >= cur_level) {
+        if (cur_level > ALARM_NORMAL && cur_level < ALARM_L3 && target_level > cur_level) {
             level_ticks++;
             if (level_ticks >= ALARM_UPGRADE_TICKS) {
                 cur_level++;

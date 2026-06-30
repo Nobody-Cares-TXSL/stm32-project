@@ -1,6 +1,5 @@
 #include "ledstrip.h"
 #include "io.h"
-#include <stdio.h>     /* debug */
 
 /* ====== pin config ====== */
 #define LS1_PORT    GPIOC
@@ -139,7 +138,6 @@ void ledstrip_set_mode(u8 strip, u8 mode)
     ls_blink_on[strip] = 1;
     ls_blink_cnt[strip] = 0;
     ledstrip_send(strip);
-    printf("LED set strip=%d mode=%d\r\n", strip, mode);
 }
 
 u8 ledstrip_get_mode(u8 strip)
@@ -169,7 +167,6 @@ void ledstrip_off(u8 strip)
     ls_blink_on[strip] = 0;
     ledstrip_send(strip);
     ledstrip_send(strip);  /* double send for latch reliability */
-    printf("LED off strip=%d\r\n", strip);
 }
 
 void ledstrip_all_off(void)
