@@ -118,6 +118,7 @@ static u8 build_frame(void)
 static u8 at_init_step(u8 cmd_idx)
 {
     if (at_phase == 0) {  /* SEND */
+        printf("[WIFI] AT%u:TX %s", cmd_idx, at_cmds[cmd_idx]);
         wifi_send_str(at_cmds[cmd_idx]);
         at_phase = 1;
         at_tick  = 0;
@@ -127,6 +128,7 @@ static u8 at_init_step(u8 cmd_idx)
     /* WAIT for response */
     at_tick++;
     if (at_tick >= AT_TIMEOUT) {
+        printf("[WIFI] AT%u:TIMEOUT\r\n", cmd_idx);
         at_phase = 0;
         return 2;
     }
@@ -134,12 +136,14 @@ static u8 at_init_step(u8 cmd_idx)
 
     /* got a line */
     if (strstr(WIFI_RX_BUF, "OK") || strstr(WIFI_RX_BUF, "ALREADY")) {
+        printf("[WIFI] AT%u:OK\r\n", cmd_idx);
         wifi_rx_clear();
         at_phase = 0;
         at_retry = 0;
         return 1;
     }
     if (strstr(WIFI_RX_BUF, "ERROR") || strstr(WIFI_RX_BUF, "FAIL")) {
+        printf("[WIFI] AT%u:ERR\r\n", cmd_idx);
         wifi_rx_clear();
         at_phase = 0;
         return 3;
@@ -193,11 +197,14 @@ void wifi_tick(void)
         result  = at_init_step(cmd_idx);
         if (result == 1) {
             /* OK, advance to next init state */
+            printf("[WIFI] state %u->%u\r\n", (u8)wifi_state, (u8)wifi_state + 1);
             wifi_state = (wifi_state_t)((u8)wifi_state + 1);
         } else if (result == 2 || result == 3) {
             /* timeout or ERROR */
             at_retry++;
+            printf("[WIFI] AT%u:retry %u/%u\r\n", cmd_idx, at_retry, AT_MAX_RETRY);
             if (at_retry >= AT_MAX_RETRY) {
+                printf("[WIFI] init failed, restart\r\n");
                 wifi_state = WIFI_OFF;
                 boot_ticks = 0;
                 at_retry   = 0;
@@ -209,6 +216,7 @@ void wifi_tick(void)
     /* ---- hotspot active, waiting for TCP client ---- */
     case WIFI_READY:
         if (wifi_rx_has("CONNECT")) {
+            printf("[WIFI] client connected\r\n");
             wifi_state = WIFI_CONNECTED;
             send_tick  = SEND_INTERVAL;   /* send first frame ASAP */
         }
@@ -218,12 +226,14 @@ void wifi_tick(void)
     case WIFI_CONNECTED:
         send_tick++;
         if (wifi_rx_has("CLOSED")) {
+            printf("[WIFI] client closed\r\n");
             wifi_state = WIFI_READY;
             break;
         }
         if (send_tick >= SEND_INTERVAL) {
             send_tick = 0;
             frame_len = build_frame();
+            printf("[WIFI] send %uB\r\n", frame_len);
             wifi_state = WIFI_CIPSEND;
             at_phase   = 0;
             at_tick    = 0;
@@ -277,9 +287,11 @@ void wifi_tick(void)
         }
         if (!WIFI_RX_STA) break;
         if (strstr(WIFI_RX_BUF, "SEND OK")) {
+            printf("[WIFI] SEND OK\r\n");
             wifi_rx_clear();
             wifi_state = WIFI_CONNECTED;
         } else if (strstr(WIFI_RX_BUF, "SEND FAIL") || strstr(WIFI_RX_BUF, "ERROR")) {
+            printf("[WIFI] SEND FAIL\r\n");
             wifi_rx_clear();
             wifi_state = WIFI_CONNECTED;
         } else {
