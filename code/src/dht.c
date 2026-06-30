@@ -70,6 +70,7 @@ u8 dht_read(GPIO_TypeDef *port, uint16_t pin, u8 *temp, u8 *humi)
 
     /* 4) 校验：前4字节之和的低8位 == 第5字节（校验和） */
     if ((u8)(buf[0] + buf[1] + buf[2] + buf[3]) != buf[4]) return 0;
+    if (buf[0] == 0 && buf[1] == 0 && buf[2] == 0 && buf[3] == 0) return 0;
 
     *humi = buf[0];   /* 湿度整数（DHT11 小数位一般为0） */
     *temp = buf[2];   /* 温度整数 */

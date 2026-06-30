@@ -165,6 +165,7 @@ static void alarm_sample_dht(void)
     } else {
         s_temp_ok = 0;     /* 保持上次温度，速率置 0（不误报） */
         s_rate = 0;
+        s_ok1 = 0; s_ok2 = 0;
     }
 }
 
