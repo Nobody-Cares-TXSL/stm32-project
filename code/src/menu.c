@@ -112,8 +112,6 @@ void menu_handle(u8 ev, u8 sw)
         /* 系统启动 */
         sys_on = 1;
         alarm_enable(1);
-        ledstrip_set_mode(0, 0);   /* 恢复白光 */
-        ledstrip_set_mode(1, 0);
         dirty = 1;
     } else if (ev == JOY_RIGHT) {
         /* 系统关闭：停报警 + 关全部执行器 */

@@ -85,6 +85,8 @@ static u8  prev_target = ALARM_NORMAL;  /* ��һ�� target���л�ʱ
 static u8  out_fan_pct     = 0;
 static u8  out_pump_on     = 0;
 static u8  last_disp_level = 0xFF;   /* ׷�ٵȼ��仯�������ظ��·� ledstrip */
+
+static u8  light_led_on   = 0;     /* 1=block1 turned white on */
 static u16 beep_period     = 0;      /* ��ǰ beep �������� ms */
 static u16 beep_phase_cnt  = 0;
 static u8  beep_cur_on     = 0;
@@ -311,14 +313,16 @@ static void alarm_dispatch_actuators(void)
         if (!(manual_mask & ALARM_MANUAL_LEDSTRIP) && !mute_flag) {
             u8 xfer = (last_disp_level >= 1 && last_disp_level <= 3);
             if (s_light > LIGHT_DARK) {
-                if (last_disp_level != 0) {
+                if (!light_led_on || xfer) {
                     ledstrip_set_mode(LEDSTRIP_1, 0);
                     ledstrip_set_mode(LEDSTRIP_2, 0);
+                    light_led_on = 1;
                     last_disp_level = 0;
                 }
             } else if (s_light < LIGHT_OFF || xfer) {
-                if (last_disp_level != 0xFF) {
+                if (light_led_on || xfer) {
                     ledstrip_all_off();
+                    light_led_on = 0;
                     last_disp_level = 0xFF;
                 }
             }
@@ -344,16 +348,18 @@ case ALARM_L3:
         break;
     }
 
-    /* ledstrip��cur_level ֵ 0/1/2/3 ��Ӧ mode������ʱ�ر� */
+    /* ledstrip: alarm level -> mode */
     if (!(manual_mask & ALARM_MANUAL_LEDSTRIP)) {
         if (mute_flag) {
             if (last_disp_level != 0xFF) {
                 ledstrip_all_off();
+                light_led_on = 0;
                 last_disp_level = 0xFF;
             }
         } else if (cur_level != ALARM_NORMAL && cur_level != last_disp_level) {
             ledstrip_set_mode(LEDSTRIP_1, cur_level);
             ledstrip_set_mode(LEDSTRIP_2, cur_level);
+            light_led_on = 0;
             last_disp_level = cur_level;
         }
     }
@@ -457,7 +463,7 @@ void alarm_init(void)
     alarm_dispatch_actuators();
 }
 
-void alarm_enable(u8 on)    { enabled = on; }
+void alarm_enable(u8 on)    { enabled = on; if (on) { light_led_on = 0; last_disp_level = 0xFF; } }
 u8   alarm_is_enabled(void) { return enabled; }
 
 void alarm_mute(void)    { mute_flag = 1; mute_remain = 1500; }   /* ����չ�㣺15s ����ʱ����ʵ�� */
