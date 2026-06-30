@@ -6,9 +6,7 @@
 #define BEEP_PIN     GPIO_Pin_4       /* PA4 -> buzzer */
 #define BEEP_CLK     RCC_APB2Periph_TYPE_A
 
-/* active low: pin=LOW -> beep on (common buzzer module) */
-#define BEEP_ON_LEVEL   0
-#define BEEP_OFF_LEVEL  1
+/* active-low: Bit_RESET (LOW) = beep ON, Bit_SET (HIGH) = beep OFF */
 
 static u8 beep_state = 0;
 
@@ -20,13 +18,13 @@ void beep_init(void)
 
 void beep_on(void)
 {
-    GPIO_WriteBit(BEEP_PORT, BEEP_PIN, (BitAction)BEEP_ON_LEVEL);
+    GPIO_WriteBit(BEEP_PORT, BEEP_PIN, Bit_RESET);  /* active-low: RESET=LOW=ON */
     beep_state = 1;
 }
 
 void beep_off(void)
 {
-    GPIO_WriteBit(BEEP_PORT, BEEP_PIN, (BitAction)BEEP_OFF_LEVEL);
+    GPIO_WriteBit(BEEP_PORT, BEEP_PIN, Bit_SET);    /* active-low: SET=HIGH=OFF */
     beep_state = 0;
 }
 

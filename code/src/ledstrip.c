@@ -32,14 +32,16 @@ static u8  ls_blink_on[2]  = {0, 0};
 static u16 ls_blink_cnt[2] = {0, 0};
 
 /*
- * WS2812B timing @72MHz (inlined, no per-bit function call)
- * Each __NOP() = 1 cycle = 13.89ns
- * BSRR write = ~1 cycle
+ * WS2812B timing @72MHz. Each __NOP() = 13.89ns. Tune NOPs if clock changes.
  *
- * 0-bit: HIGH ~35cyc(486ns) + LOW ~55cyc(764ns) = ~1250ns
- * 1-bit: HIGH ~55cyc(764ns) + LOW ~25cyc(347ns) = ~1111ns
- * Loop overhead ~5cyc absorbed into LOW period
- * Threshold ~500ns => 0-bit 486ns < 500ns, 1-bit 764ns > 500ns
+ * Spec (per datasheet):
+ *   0-bit: T0H=400+-150ns  T0L=850+-150ns
+ *   1-bit: T1H=800+-150ns  T1L=450+-150ns
+ *   RESET > 50us LOW
+ *
+ * Actual @72MHz (within spec):
+ *   0-bit: H=35cyc(486ns) + L=55cyc(764ns) = ~1250ns
+ *   1-bit: H=55cyc(764ns) + L=25cyc(347ns) = ~1111ns
  */
 
 /* send one byte MSB first -- bit-banging inlined */
@@ -164,6 +166,7 @@ void ledstrip_off(u8 strip)
     ls_mode[strip] = 0;
     ls_blink_on[strip] = 0;
     ledstrip_send(strip);
+    ledstrip_send(strip);  /* double send for latch reliability */
 }
 
 void ledstrip_all_off(void)

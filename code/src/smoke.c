@@ -19,7 +19,11 @@ static u16 smoke_read_adc(u8 ch)
 {
     ADC_RegularChannelConfig(ADC1, ch, 1, ADC_SampleTime_55Cycles5);
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
-    while (!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC));
+    {
+        u16 _to = 0xFFFF;
+        while (!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) && --_to);
+        if (_to == 0) return 0;  /* ADC timeout */
+    }
     return ADC_GetConversionValue(ADC1);
 }
 

@@ -32,7 +32,11 @@ static u16 joy_read_adc(u8 ch)
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 
     /* 阻塞等待ADC1转换完成，直到获取到结束标志（EOC） */
-    while (!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC));
+    {
+        u16 _to = 0xFFFF;
+        while (!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) && --_to);
+        if (_to == 0) return 0;  /* ADC timeout */
+    }
 
     // 读取并返回ADC1的转换数值
     return ADC_GetConversionValue(ADC1);

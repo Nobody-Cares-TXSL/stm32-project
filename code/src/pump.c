@@ -6,8 +6,8 @@
 #define PUMP_PIN        GPIO_Pin_1       /* PA1 → 继电器 IN1 */
 #define PUMP_CLK        RCC_APB2Periph_TYPE_A
 
-/* 有效电平：1=高电平继电器吸合(常见)，0=低电平吸合 */
-#define PUMP_ACTIVE_HIGH  0
+/* 驱动电平：1=高电平驱动, 0=低电平驱动 */
+#define PUMP_ACTIVE_HIGH  0  /* 本机为低电平驱动 */
 
 static u8 pump_state = 0;     /* 0=关，1=开 */
 

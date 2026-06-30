@@ -369,7 +369,9 @@ void alarm_tick(void)
 {
     tick_cnt++;
 
-    ledstrip_tick();     /* 统一驱动灯带 blink（修复退出视图后不闪的 bug） */
+    if (enabled) {
+        ledstrip_tick();  /* 统一驱动灯带 blink */
+    }
 
     /* 每 2s：读 DHT + 算升温速率（放在判定前，确保用最新温/速率） */
     if (tick_cnt % ALARM_TICK_DHT == 0) {
