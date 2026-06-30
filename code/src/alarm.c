@@ -475,3 +475,5 @@ u8   alarm_get_humi_n(u8 n)  { return (n == 1) ? s_h1 : s_h2; }
 u16  alarm_get_flame_n(u8 n) { return (n == 1) ? s_f1 : s_f2; }
 u8   alarm_get_temp_n_ok(u8 n) { return (n == 1) ? s_ok1 : s_ok2; }
 
+u8   alarm_get_flame_level_n(u8 n) { return classify_flame((n == 1) ? s_f1 : s_f2); }
+

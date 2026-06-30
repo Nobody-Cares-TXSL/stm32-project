@@ -3,11 +3,30 @@
 
 #include "stm32f10x.h"
 
-#define WIFI_RX_BUF_LEN  128   /* ESP 响应接收缓冲 */
+#define WIFI_RX_BUF_LEN  128   /* ESP response buffer */
 
-extern char WIFI_RX_BUF[WIFI_RX_BUF_LEN];   /* 接收缓冲 */
-extern volatile u8 WIFI_RX_STA;              /* 1 = 收到一帧（\n 结尾） */
+/* ====== AT state machine ====== */
+typedef enum {
+    WIFI_OFF = 0,       /* waiting for ESP boot (3s) */
+    WIFI_AT,            /* AT test */
+    WIFI_ECHO,          /* ATE0 disable echo */
+    WIFI_APMODE,        /* AT+CWMODE=2 (AP mode) */
+    WIFI_AP,            /* AT+CWSAP (set AP params) */
+    WIFI_MUX,           /* AT+CIPMUX=1 */
+    WIFI_SERVER,        /* AT+CIPSERVER=1,8080 */
+    WIFI_READY,         /* hotspot active, waiting for client */
+    WIFI_CONNECTED,     /* TCP client connected */
+    WIFI_CIPSEND,       /* sending AT+CIPSEND cmd */
+    WIFI_SEND_DATA,     /* sending sensor data frame */
+    WIFI_SEND_WAIT      /* waiting for SEND OK */
+} wifi_state_t;
 
-void wifi_init(void);   /* USART2 初始化 + 等 ESP 启动 + 发 AT（v1：验证通信） */
+extern char WIFI_RX_BUF[WIFI_RX_BUF_LEN];
+extern volatile u8 WIFI_RX_STA;
+
+void wifi_init(void);
+void wifi_tick(void);
+u8   wifi_is_ready(void);
+u8   wifi_has_client(void);
 
 #endif /* __WIFI_H */

@@ -45,6 +45,7 @@ int main(void)
         u8 sw = joystick_pressed();
         menu_handle(ev, sw);   /* 每轮调用：主菜单按需重绘，视图态周期 tick */
         alarm_tick();    /* 引擎后台常驻 */
+        wifi_tick();    /* WiFi AT state machine */
         delay_ms(10);
     }
 }
