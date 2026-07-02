@@ -20,9 +20,9 @@
 #define SMOKE_L3      3000U   /* >3000=���� */
 #define SMOKE_SEVERE  3500U   /* >3500 + �¶�>55 �� ˲ʱ���� */
 
-#define TEMP_L1       32    /* 32�� */
-#define TEMP_L2       35    /* 35�� */
-#define TEMP_L3       37    /* 37�� */
+#define TEMP_L1       28    /* 28�� */
+#define TEMP_L2       32    /* 32�� */
+#define TEMP_L3       35    /* 35�� */
 #define TEMP_SEVERE   55         /* ���س������� */
 
 #define RATE_L1       1          /* 0.1 ��/s */
