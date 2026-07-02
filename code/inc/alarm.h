@@ -26,7 +26,7 @@ void alarm_tick(void);          /* 主循环每 10ms 调一次 */
 void alarm_enable(u8 on);
 u8   alarm_is_enabled(void);
 
-/* ====== 系统状态 getter（数据聚合中心,供 WiFi/UI 复用） ====== */
+/* ====== 系统状态 getter（数据聚合中心,供 UI 使用） ====== */
 u8   alarm_get_level(void);        /* 系统综合等级 0-3 */
 u8   alarm_get_temp(void);         /* 温度℃（两路最大） */
 u8   alarm_get_humi(void);         /* 湿度% */
@@ -41,7 +41,7 @@ u8   alarm_get_smoke_level(void);  /* 0-3 */
 u8   alarm_get_temp_level(void);
 u8   alarm_get_flame_level(void);
 
-/* ====== 执行器下发状态 getter（供 WiFi 上报真实下发值） ====== */
+/* ====== 执行器下发状态 getter（供 UI 显示真实下发值） ====== */
 u8   alarm_get_fan_pct(void);      /* 引擎下发的风扇% */
 u8   alarm_get_pump_on(void);      /* 引擎下发的水泵开关 */
 

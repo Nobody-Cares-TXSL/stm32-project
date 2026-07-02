@@ -11,7 +11,6 @@
 #include "ledstrip.h" /* ledstrip_init */
 #include "beep.h"    /* beep_init */
 #include "usart.h"   /* USART1 调试 log */
-#include "wifi.h"    /* ESP-01S WiFi */
 #include "alarm.h"   /* 中央联动引擎 */
 #include "menu.h"
 #include "lcd.h"
@@ -32,7 +31,6 @@ int main(void)
     pump_init();   /* pump: PA1 GPIO -> relay IN1 */
     ledstrip_init(); /* ledstrip: PC12(DIN1) + PC11(DIN2) WS2812B */
     beep_init();   /* beep: PA4 GPIO */
-    wifi_init();     /* USART2 + ESP-01S（v1: 发 AT 验证通信） */
     alarm_init();    /* 中央联动引擎：采集+判定+联动 */
     ui_login("欢迎进入");
     delay_s(2);
@@ -45,7 +43,6 @@ int main(void)
         u8 sw = joystick_pressed();
         menu_handle(ev, sw);   /* 每轮调用：主菜单按需重绘，视图态周期 tick */
         alarm_tick();    /* 引擎后台常驻 */
-        wifi_tick();    /* WiFi AT state machine */
         delay_ms(10);
     }
 }
