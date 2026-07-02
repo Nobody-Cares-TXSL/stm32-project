@@ -21,9 +21,9 @@
 #define SMOKE_SEVERE  3500U   /* >3500 + 温度>55 = 瞬时三级 */
 
 #define TEMP_L1       28    /* 28度 */
-#define TEMP_L2       32    /* 32度 */
-#define TEMP_L3       35    /* 35度 */
-#define TEMP_SEVERE   55         /* 严重超温阈值 */
+#define TEMP_L2       30    /* 30度 */
+#define TEMP_L3       32    /* 32度 */
+#define TEMP_SEVERE   40         /* 严重超温阈值 */
 
 #define RATE_L1       1          /* 0.1 度/秒 */
 #define RATE_L2       2           /* 0.2 度/秒 */
